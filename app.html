@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>물결</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script>
+  // =========================================================
+  // ✏️ Supabase 연결 정보 (README 2단계)
+  //    아래 두 값을 바꾸기 전에는 예시 데이터로 움직이는 "체험 모드"예요.
+  //    anon key 만 넣으세요. service_role key 는 절대 넣지 마세요.
+  // =========================================================
+  window.MULGYEOL = {
+    SUPABASE_URL: "https://YOUR-PROJECT.supabase.co",
+    SUPABASE_ANON_KEY: "YOUR-ANON-KEY",
+  };
+  </script>
+  <style>
+/* =========================================================
+   물결 디자인 시스템
+   콘셉트: 은빛 라벤더 물결 위에 흩어진 푸른 반짝임
+   - 배경: 안개 낀 라벤더 실버 + 물빛 번짐 + 반짝임 점
+   - 패널: 물방울 같은 반투명 유리
+   - 포인트: 페리윙클 블루 (반짝임 색)
+   ========================================================= */
+:root {
+  --bg: #ecebf2;
+  --bg-glow-a: #d9def4;
+  --bg-glow-b: #e6dcef;
+  --glass: rgba(255, 255, 255, 0.66);
+  --glass-strong: rgba(255, 255, 255, 0.86);
+  --ink: #232842;
+  --muted: #676d8c;
+  --line: rgba(98, 108, 160, 0.18);
+  --accent: #4a5db3;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(110, 135, 230, 0.14);
+  --spark: #7c9cff;
+  --spark-dot: rgba(120, 150, 255, 0.55);
+  --track: rgba(98, 108, 160, 0.14);
+  --good: #2f7d6d;
+  --good-soft: rgba(47, 125, 109, 0.12);
+  --warn: #b5562a;
+  --warn-soft: rgba(181, 86, 42, 0.12);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 18px 40px -28px rgba(55, 65, 130, 0.45);
+  --display: "Gowun Batang", "Nanum Myeongjo", serif;
+  --sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --radius: 16px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1121; --bg-glow-a: #1b2250; --bg-glow-b: #2a1f46;
+    --glass: rgba(30, 36, 66, 0.62); --glass-strong: rgba(34, 40, 74, 0.9);
+    --ink: #e8eaf8; --muted: #9ba1c4; --line: rgba(160, 176, 255, 0.16);
+    --accent: #9fb3ff; --accent-ink: #12162c; --accent-soft: rgba(140, 165, 255, 0.16);
+    --spark: #a9bcff; --spark-dot: rgba(185, 202, 255, 0.7); --track: rgba(160, 176, 255, 0.14);
+    --good: #7fd1bd; --good-soft: rgba(127, 209, 189, 0.14); --warn: #f0a07a; --warn-soft: rgba(240, 160, 122, 0.14);
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1121; --bg-glow-a: #1b2250; --bg-glow-b: #2a1f46;
+  --glass: rgba(30, 36, 66, 0.62); --glass-strong: rgba(34, 40, 74, 0.9);
+  --ink: #e8eaf8; --muted: #9ba1c4; --line: rgba(160, 176, 255, 0.16);
+  --accent: #9fb3ff; --accent-ink: #12162c; --accent-soft: rgba(140, 165, 255, 0.16);
+  --spark: #a9bcff; --spark-dot: rgba(185, 202, 255, 0.7); --track: rgba(160, 176, 255, 0.14);
+  --good: #7fd1bd; --good-soft: rgba(127, 209, 189, 0.14); --warn: #f0a07a; --warn-soft: rgba(240, 160, 122, 0.14);
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body {
+  margin: 0; min-height: 100vh; color: var(--ink); font: 15px/1.6 var(--sans);
+  background:
+    radial-gradient(900px 520px at 88% -8%, var(--bg-glow-a), transparent 62%),
+    radial-gradient(760px 480px at -6% 104%, var(--bg-glow-b), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+/* 반짝임: 물보라 위 푸른 점 */
+body::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .55;
+  background-image:
+    radial-gradient(circle at 18% 22%, var(--spark-dot) 0 1.1px, transparent 1.7px),
+    radial-gradient(circle at 63% 71%, var(--spark-dot) 0 1.4px, transparent 2px),
+    radial-gradient(circle at 83% 37%, var(--spark-dot) 0 0.9px, transparent 1.5px),
+    radial-gradient(circle at 37% 86%, var(--spark-dot) 0 1.2px, transparent 1.8px);
+  background-size: 173px 173px, 241px 241px, 307px 307px, 389px 389px;
+  animation: twinkle 7s ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: .35; } to { opacity: .7; } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; } }
+body > * { position: relative; z-index: 1; }
+
+h1, h2, h3 { margin: 0; line-height: 1.3; text-wrap: balance; }
+h1 { font: 700 26px/1.3 var(--display); letter-spacing: -0.01em; }
+h2 { font-size: 17px; font-weight: 700; }
+h3 { font-size: 15px; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+.sub { color: var(--muted); font-size: 13.5px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* ---------- 물결 선 장식 ---------- */
+.wave-lines {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='160' viewBox='0 0 600 160'%3E%3Cg fill='none' stroke='%237c9cff' stroke-opacity='.35' stroke-width='1.2'%3E%3Cpath d='M0 40 C100 10 200 70 300 40 S500 10 600 40'/%3E%3Cpath d='M0 62 C100 32 200 92 300 62 S500 32 600 62'/%3E%3Cpath d='M0 84 C100 54 200 114 300 84 S500 54 600 84'/%3E%3Cpath d='M0 106 C100 76 200 136 300 106 S500 76 600 106'/%3E%3Cpath d='M0 128 C100 98 200 158 300 128 S500 98 600 128'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat-x; background-size: 600px 160px;
+}
+
+/* ---------- 공통 부품 ---------- */
+.panel {
+  background: var(--glass); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0;
+}
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row.between { justify-content: space-between; }
+.row.wrap { flex-wrap: wrap; }
+.row > * { min-width: 0; }
+.list { display: grid; gap: 10px; }
+
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--glass-strong); color: var(--ink);
+  border-radius: 11px; padding: 10px 14px; font: 600 14px var(--sans); cursor: pointer; text-align: center;
+  text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -12px rgba(70, 90, 180, .6); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { padding: 6px 10px; font-size: 12.5px; border-radius: 9px; }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .5; cursor: default; transform: none; box-shadow: none; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid var(--spark); outline-offset: 2px;
+}
+
+label { font-size: 12.5px; color: var(--muted); display: grid; gap: 5px; font-weight: 500; }
+input, select, textarea {
+  font: 15px var(--sans); padding: 10px 12px; border: 1px solid var(--line); border-radius: 11px;
+  background: var(--glass-strong); color: var(--ink); width: 100%;
+}
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; color: var(--ink); font-weight: 400; }
+.check input { width: auto; margin-top: 4px; accent-color: var(--accent); }
+
+.chip { font-size: 11.5px; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; font-weight: 600; }
+.chip.done { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.chip.good { background: var(--good-soft); border-color: transparent; color: var(--good); }
+.chip.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.bar { height: 8px; border-radius: 99px; background: var(--track); overflow: hidden; position: relative; }
+.bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--spark)); }
+.bar .target { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .55; border-radius: 2px; }
+
+.notice {
+  background: var(--accent-soft); color: var(--ink); border: 1px solid var(--line);
+  padding: 10px 14px; border-radius: 12px; font-size: 13.5px;
+}
+#toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px;
+  opacity: 0; transition: .2s; pointer-events: none; max-width: 90vw; z-index: 50;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { #toast, .btn { transition: none; } }
+
+/* ---------- 대시보드 셸 ---------- */
+.shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.side {
+  position: sticky; top: 0; height: 100vh; padding: 24px 16px; display: flex; flex-direction: column; gap: 22px;
+  border-right: 1px solid var(--line); background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.brand { display: grid; gap: 2px; padding: 0 8px; text-decoration: none; color: var(--ink); }
+.brand b { font: 700 26px/1 var(--display); letter-spacing: .02em; }
+.brand span { font-size: 11.5px; color: var(--muted); }
+.nav { display: grid; gap: 4px; }
+.nav a {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 11px;
+  color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px;
+}
+.nav a svg { width: 18px; height: 18px; flex: none; }
+.nav a:hover { background: var(--accent-soft); color: var(--ink); }
+.nav a.on { background: var(--glass-strong); color: var(--accent); box-shadow: var(--shadow); }
+.side .me { margin-top: auto; display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--glass-strong); }
+.side .wave-deco { height: 90px; margin: 0 -16px; opacity: .9; }
+
+.main {
+  padding: 28px max(20px, env(safe-area-inset-right, 0px)) 56px max(20px, env(safe-area-inset-left, 0px));
+  display: grid; gap: 20px; align-content: start; max-width: 1280px; width: 100%;
+}
+.page-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.page-head .title { display: grid; gap: 4px; }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.kpi { gap: 8px; }
+.kpi .label { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.kpi .value { font: 700 30px/1.1 var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.kpi .value small { font-size: 14px; color: var(--muted); font-weight: 600; margin-left: 2px; }
+.kpi .foot { font-size: 12.5px; color: var(--muted); }
+
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.class-card { background: var(--glass-strong); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
+th { text-align: left; font-size: 11.5px; letter-spacing: .06em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 11px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+td .bar { width: 120px; }
+.feed { display: grid; gap: 12px; }
+.feed-item { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--accent-soft); }
+
+/* 드릴 체크 */
+.roster { display: flex; gap: 6px; flex-wrap: wrap; }
+.roster button {
+  border: 1px solid var(--line); background: var(--glass-strong); color: var(--muted); border-radius: 99px;
+  padding: 5px 12px; font: 600 13px var(--sans); cursor: pointer;
+}
+.roster button.cur { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.roster button.saved::after { content: " ✓"; color: var(--good); }
+.roster button.cur.saved::after { color: var(--accent-ink); }
+.drill { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 11px 0; border-bottom: 1px dashed var(--line); }
+.drill:last-child { border-bottom: 0; }
+.tri { display: flex; gap: 4px; background: var(--track); padding: 3px; border-radius: 11px; }
+.tri button {
+  border: 0; background: transparent; color: var(--muted); border-radius: 8px;
+  padding: 7px 12px; font: 600 13px var(--sans); cursor: pointer; min-width: 52px;
+}
+.tri button.on[data-v="done"] { background: var(--accent); color: var(--accent-ink); }
+.tri button.on[data-v="doing"] { background: var(--glass-strong); color: var(--accent); box-shadow: var(--shadow); }
+.tri button.on[data-v="none"] { background: var(--glass-strong); color: var(--ink); }
+
+/* ---------- 소개 · 인증 · 리포트 (단일 컬럼) ---------- */
+.solo {
+  max-width: 480px; margin: 0 auto; display: grid; gap: 16px;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 56px max(16px, env(safe-area-inset-left, 0px));
+}
+.solo.wide { max-width: 1040px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 4px; gap: 12px; }
+.topbar .brand b { font-size: 22px; }
+.topbar .right { display: flex; gap: 12px; align-items: center; font-size: 13.5px; }
+.hero { display: grid; gap: 16px; padding: 40px 0 10px; }
+.hero h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.2; }
+.hero .lead { font-size: 16px; color: var(--muted); max-width: 46ch; }
+.hero-wave { height: 160px; border-radius: 20px; border: 1px solid var(--line); background-color: var(--glass); }
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.auth { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); }
+.auth .panel { width: min(420px, 100%); padding: 26px; gap: 14px; }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vbox { display: grid; gap: 4px; min-width: 0; }
+.vbox video, .vbox .empty { width: 100%; aspect-ratio: 3 / 4; border-radius: 14px; background: var(--track); object-fit: cover; }
+.vbox .empty { display: grid; place-items: center; color: var(--muted); font-size: 12.5px; text-align: center; padding: 8px; border: 1px dashed var(--line); }
+.big-progress { font: 700 44px/1 var(--sans); letter-spacing: -0.03em; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* ---------- 반응형 ---------- */
+@media (max-width: 1080px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side {
+    position: sticky; top: 0; height: auto; z-index: 10; flex-direction: row; align-items: center; gap: 10px;
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto;
+  }
+  .side .brand span, .side .wave-deco, .side .me .sub { display: none; }
+  .brand { flex: none; white-space: nowrap; }
+  .brand b { font-size: 20px; }
+  .nav { display: flex; gap: 2px; }
+  .nav a { padding: 7px 9px; white-space: nowrap; font-size: 13px; }
+  .nav a svg { display: none; }
+  .side .me { margin: 0 0 0 auto; padding: 0; border: 0; background: none; }
+  .main { padding-top: 18px; }
+  .kpi .value { font-size: 24px; }
+  .features { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .kpi { padding: 14px; }
+  .tri button { min-width: 44px; padding: 7px 8px; }
+}
+
+/* 페이지 머리: 물결 선이 지나가는 유리 띠 */
+.panel-wave {
+  padding: 22px 24px; border-radius: 20px; border: 1px solid var(--line); box-shadow: var(--shadow);
+  background-color: var(--glass); background-position: right -60px bottom -46px;
+}
+.panel > .chip, .kpi > .chip { justify-self: start; }
+.back { padding: 6px 12px 6px 10px; }
+.back span { font-size: 15px; line-height: 1; }
+
+/* =========================================================
+   랜딩페이지 (index.html)
+   ========================================================= */
+.lp { max-width: 1160px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-right, 0px)) 0 max(20px, env(safe-area-inset-left, 0px)); }
+.lp-nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin: 14px 0 0; padding: 10px 12px 10px 18px; border-radius: 16px; border: 1px solid var(--line);
+  background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+}
+.lp-nav .links { display: flex; gap: 22px; font-size: 14px; font-weight: 600; }
+.lp-nav .links a { color: var(--muted); text-decoration: none; }
+.lp-nav .links a:hover { color: var(--ink); }
+.lp-nav .right { display: flex; gap: 8px; align-items: center; }
+
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; align-items: center; padding: 72px 0 56px; }
+.lp-hero h1 { font: 700 clamp(36px, 5.4vw, 64px)/1.18 var(--display); letter-spacing: -0.02em; }
+.lp-hero h1 em { font-style: normal; background: linear-gradient(100deg, var(--accent), var(--spark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lp-hero .lead { font-size: 17px; color: var(--muted); max-width: 44ch; line-height: 1.75; }
+.lp-hero .copy { display: grid; gap: 22px; }
+.lp-hero .note { font-size: 13px; color: var(--muted); }
+
+/* 히어로 그림: 물결 위에 떠 있는 리포트 카드 */
+.lp-stage { position: relative; min-height: 470px; display: grid; place-items: center; }
+.lp-stage .waves { position: absolute; inset: 18% -8% 8% -8%; border-radius: 40px; opacity: .9; background-position: center; background-size: 520px 140px; }
+.lp-phone {
+  position: relative; width: min(300px, 82%); border-radius: 30px; padding: 16px; display: grid; gap: 12px;
+  background: var(--glass-strong); border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgba(55, 65, 140, .55);
+  animation: bob 6s ease-in-out infinite;
+}
+.lp-phone .mini-h { font: 700 17px/1.3 var(--display); }
+.lp-phone .vids { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lp-phone .vids div { aspect-ratio: 3/4; border-radius: 12px; border: 1px dashed var(--line); display: grid; place-items: end start; padding: 8px; font-size: 11px; color: var(--muted); }
+.lp-float {
+  position: absolute; padding: 10px 14px; border-radius: 14px; background: var(--glass-strong); border: 1px solid var(--line);
+  box-shadow: var(--shadow); font-size: 13px; display: grid; gap: 2px; animation: bob 7s ease-in-out infinite;
+}
+.lp-float b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.lp-float.a { top: 8%; right: 0; animation-delay: -2s; }
+.lp-float.b { bottom: 10%; left: 0; animation-delay: -4s; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) { .lp-phone, .lp-float { animation: none; } }
+
+.lp-sec { padding: 64px 0; display: grid; gap: 28px; border-top: 1px solid var(--line); }
+.lp-sec > header { display: grid; gap: 10px; max-width: 640px; }
+.lp-sec h2 { font: 700 clamp(26px, 3.4vw, 38px)/1.25 var(--display); letter-spacing: -0.01em; }
+.lp-sec header p { color: var(--muted); font-size: 16px; }
+
+.lp-voices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.lp-voice { padding: 24px; gap: 16px; }
+.lp-voice .who { display: flex; gap: 8px; align-items: center; }
+.lp-voice blockquote { margin: 0; font: 700 21px/1.5 var(--display); }
+.lp-voice ul { margin: 0; padding-left: 1.1em; color: var(--muted); display: grid; gap: 4px; font-size: 14.5px; }
+.lp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.lp-stat { display: grid; gap: 4px; padding: 6px 0 0 16px; border-left: 2px solid var(--accent); }
+.lp-stat b { font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.lp-stat span { color: var(--muted); font-size: 14px; }
+.lp-cause { padding: 22px 24px; font-size: 17px; }
+.lp-cause b { color: var(--accent); }
+
+.lp-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; counter-reset: step; }
+.lp-step { padding: 22px; gap: 10px; }
+.lp-step .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+.lp-step .who { justify-self: start; }
+
+.lp-show { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.lp-show .panel { padding: 22px; gap: 14px; }
+.lp-show ul { margin: 0; padding-left: 1.1em; color: var(--muted); display: grid; gap: 6px; }
+.lp-mini-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lp-mini-kpis div { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 2px; background: var(--glass-strong); }
+.lp-mini-kpis b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.lp-mini-kpis span { font-size: 11.5px; color: var(--muted); }
+
+.lp-for { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.lp-for .panel { padding: 22px; }
+.lp-for ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--muted); font-size: 14.5px; }
+
+.lp-trust { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.lp-trust div { display: grid; gap: 6px; }
+.lp-trust p { color: var(--muted); font-size: 14.5px; }
+
+.lp-cta {
+  margin: 24px 0 40px; padding: 48px 32px; border-radius: 28px; text-align: center; display: grid; gap: 18px; justify-items: center;
+  border: 1px solid var(--line); background-color: var(--glass); box-shadow: var(--shadow); background-position: center bottom -40px;
+}
+.lp-cta h2 { font: 700 clamp(26px, 3.6vw, 40px)/1.3 var(--display); }
+.lp-cta p { color: var(--muted); max-width: 48ch; }
+.lp-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 24px 0 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+
+@media (max-width: 900px) {
+  .lp-hero { grid-template-columns: minmax(0, 1fr); padding-top: 44px; gap: 28px; }
+  .lp-stage { min-height: 420px; }
+  .lp-nav .links { display: none; }
+  .lp-voices, .lp-show { grid-template-columns: minmax(0, 1fr); }
+  .lp-steps, .lp-for, .lp-trust { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .lp-stats { grid-template-columns: minmax(0, 1fr); }
+  .lp-nav .right .ghost-login { display: none; }
+  .lp-float.a { right: -4px; } .lp-float.b { left: -4px; }
+  .lp-sec { padding: 48px 0; }
+}
+.lp { overflow-x: clip; }
+.lp-cause { display: block; }
+.lp-float.b { bottom: 2%; left: 2%; }
+.lp-float.b { top: 50%; bottom: auto; left: 0; }
+
+  </style>
+</head>
+<body>
+<!--
+  물결 시스템 (app.html) · 랜딩페이지는 index.html
+  화면 이동은 주소 뒤의 ?p= 로 구분해요.
+  ?p=signup 회원가입 · ?p=login 로그인 · ?p=teacher 대시보드 · ?p=check 드릴 체크 · ?p=report 학부모 리포트
+-->
+
+<template id="page-signup">
+<!-- S2 회원가입 (강사) -->
+<main class="auth">
+  <form id="form" class="panel">
+    <div class="row" id="backSlot"></div>
+    <a class="brand" href="index.html" style="padding:0"><b>물결</b><span>수영 성장 기록 리포트</span></a>
+    <h1 style="font-size:22px">강사 회원가입</h1>
+    <p class="sub">학부모님은 가입 없이, 강사님이 보낸 리포트 링크로 확인해요.</p>
+    <label>이름<input id="name" required autocomplete="name" placeholder="홍길동"></label>
+    <label>이메일<input id="email" type="email" required autocomplete="email" placeholder="name@example.com"></label>
+    <label>비밀번호 (6자 이상)<input id="password" type="password" required minlength="6" autocomplete="new-password"></label>
+
+    <div class="list" style="gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px">
+      <label class="check"><input type="checkbox" id="agreeAll"> <b>전체 동의</b></label>
+      <label class="check"><input type="checkbox" class="agree" required> (필수) 서비스 이용약관</label>
+      <label class="check"><input type="checkbox" class="agree" required> (필수) 개인정보 수집·이용</label>
+      <label class="check"><input type="checkbox" class="agree" required> (필수) 회원(아동) 영상은 보호자 동의를 받은 경우에만 올립니다</label>
+    </div>
+
+    <button class="btn primary block" id="submit">가입하기</button>
+    <p id="msg" class="sub" role="status"></p>
+    <p class="sub">이미 계정이 있나요? <a href="?p=login">로그인</a></p>
+  </form>
+</main>
+</template>
+<template id="page-login">
+<!-- S3 로그인 (강사) -->
+<main class="auth">
+  <form id="form" class="panel">
+    <div class="row" id="backSlot"></div>
+    <a class="brand" href="index.html" style="padding:0"><b>물결</b><span>수영 성장 기록 리포트</span></a>
+    <h1 style="font-size:22px">강사 로그인</h1>
+    <label>이메일<input id="email" type="email" required autocomplete="email" placeholder="name@example.com"></label>
+    <label>비밀번호<input id="password" type="password" required autocomplete="current-password"></label>
+    <button class="btn primary block" id="submit">로그인</button>
+    <p id="msg" class="sub" role="status"></p>
+    <p class="sub">처음이신가요? <a href="?p=signup">강사 회원가입</a> · 로그인 상태는 이 기기에 유지돼요.</p>
+  </form>
+</main>
+</template>
+<template id="page-teacher">
+<!-- S4 강사 대시보드: 오늘 수업 · MVP 성공 기준 · 회원 현황 · 반/회원 관리 -->
+<div class="shell">
+  <aside class="side" id="side"></aside>
+
+  <main class="main">
+    <header class="page-head panel-wave wave-lines">
+      <div class="title">
+        <span class="eyebrow" id="today"></span>
+        <h1 id="hello">대시보드</h1>
+      </div>
+      <div class="row" id="backSlot"><a class="btn primary" id="quick" href="#today">오늘 수업 기록하기</a></div>
+    </header>
+
+    <section class="kpis" id="kpis" aria-label="주요 지표"></section>
+
+    <section class="grid-2">
+      <div class="panel" id="todayPanel">
+        <div class="panel-head" id="today-anchor"><h2>오늘 수업</h2><span class="sub" id="todaySub"></span></div>
+        <div class="class-grid" id="classes"><p class="sub">불러오는 중...</p></div>
+      </div>
+      <div class="panel" id="criteria"></div>
+    </section>
+
+    <section class="grid-2">
+      <div class="panel" id="students">
+        <div class="panel-head"><h2>회원 현황</h2><span class="sub">진행률 = 현재 단계 드릴 중 완료한 비율</span></div>
+        <div class="table-wrap" id="studentTable"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>최근 강사 코멘트</h2><span class="sub">학부모 리포트에 표시돼요</span></div>
+        <div class="feed" id="feed"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="manage">
+      <div class="panel-head"><h2>반·회원 관리</h2><span class="sub">회원을 추가하면 리포트 링크가 자동으로 만들어져요</span></div>
+      <div class="grid-2" style="align-items:start">
+        <div class="list" id="manageList"></div>
+        <div class="list">
+          <form id="studentForm" class="panel" style="box-shadow:none">
+            <h3>회원 추가</h3>
+            <label>반<select id="sClass" required></select></label>
+            <div class="row">
+              <label style="flex:1">이름<input id="sName" required placeholder="김하늘"></label>
+              <label style="width:90px">나이<input id="sAge" type="number" min="3" max="19" placeholder="9"></label>
+            </div>
+            <label>단계<select id="sLevel" required></select></label>
+            <button class="btn primary">회원 추가</button>
+          </form>
+          <form id="classForm" class="panel" style="box-shadow:none">
+            <h3>새 반 만들기</h3>
+            <div class="row">
+              <label style="flex:1">반 이름<input id="className" required placeholder="중급반"></label>
+              <label style="flex:1">수업 시간<input id="classSchedule" placeholder="화목 17:00"></label>
+            </div>
+            <button class="btn">반 만들기</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</template>
+<template id="page-check">
+<!-- S5 드릴 체크 입력 -->
+<div class="shell">
+  <aside class="side" id="side"></aside>
+  <main class="main">
+    <header class="page-head panel-wave wave-lines">
+      <div class="row" id="backSlot"></div>
+      <div class="title"><span class="eyebrow" id="clsLabel">수업 기록</span><h1 id="title">드릴 체크</h1></div>
+      <div class="row"><span class="sub num" id="counter"></span><a class="btn small" href="?p=teacher">대시보드</a></div>
+    </header>
+    <div class="roster" id="roster" aria-label="회원 목록"></div>
+    <div id="view" class="grid-2"><p class="sub">불러오는 중...</p></div>
+  </main>
+</div>
+</template>
+<template id="page-report">
+<!-- S6 학부모 성장 리포트 (로그인 없이 링크로 열람) -->
+<main class="solo">
+  <div class="topbar">
+    <div class="row" id="backSlot"><span class="brand"><b>물결</b></span></div>
+    <div class="right">
+      <button class="btn small" id="prevM" aria-label="이전 달">‹</button>
+      <b id="monthLabel" class="num"></b>
+      <button class="btn small" id="nextM" aria-label="다음 달">›</button>
+    </div>
+  </div>
+  <div id="view" class="list" style="gap:14px"><p class="sub">리포트를 불러오는 중...</p></div>
+</main>
+</template>
+
+<script>
+// ---------- 체험 모드 예시 데이터 ----------
+// =========================================================
+// 체험 모드: config.js 를 설정하기 전에는 예시 데이터로 화면이 움직입니다.
+// (브라우저 탭을 닫으면 예시 데이터는 처음 상태로 돌아갑니다)
+// =========================================================
+window.MulgyeolDemo = (function () {
+  const KEY = "mg-demo-db-v2";
+  const pad = (n) => String(n).padStart(2, "0");
+  const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Math.random().toString(36).slice(2) + Date.now());
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+  const DRILLS = [
+    ["자유형 1단계", 1, ["물 적응 · 음파 호흡", "벽 잡고 발차기", "킥판 발차기", "킥판 발차기 + 정면 호흡"]],
+    ["자유형 2단계", 2, ["킥판 측면 호흡", "한 팔 자유형 (킥판)", "자유형 팔 동작", "팔 동작 + 호흡 맞추기", "자유형 12.5m"]],
+    ["자유형 3단계", 3, ["자유형 25m 완주", "양측 호흡", "스트림라인 출발"]],
+    ["배영 1단계", 4, ["누워 뜨기", "배영 발차기 (킥판 안고)", "배영 발차기 12.5m"]],
+    ["배영 2단계", 5, ["배영 한 팔 동작", "배영 팔 동작", "배영 25m 완주"]],
+  ];
+  const COMMENTS = [
+    "호흡할 때 고개가 많이 들려요. 귀를 물에 붙이는 연습 중이에요.",
+    "발차기가 무릎에서 나와요. 허벅지부터 차도록 지도했어요.",
+    "킥판 없이 12.5m 성공! 자신감이 많이 붙었어요.",
+    "팔 동작은 좋아졌고, 호흡 타이밍을 맞추는 중이에요.",
+    "물을 무서워하던 모습이 많이 줄었어요.",
+    "스트림라인 자세가 안정적이에요. 출발 연습을 시작했어요.",
+  ];
+
+  function build() {
+    const today = new Date();
+    const T = ymd(today);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastMonth = addDays(monthStart, -18);
+    const db = { teachers: [], drills: [], classes: [], students: [], sessions: [], records: [], surveys: [] };
+    const me = "demo-teacher";
+    db.teachers.push({ id: me, name: "김물결" });
+    let id = 1;
+    DRILLS.forEach(([level, order, names]) => names.forEach((name, i) => db.drills.push({ id: id++, level, level_order: order, name, sort: i + 1 })));
+
+    const cls = [
+      { id: "c1", name: "초급반", schedule: "월수 16:00" },
+      { id: "c2", name: "중급반", schedule: "화목 17:00" },
+      { id: "c3", name: "개인 레슨", schedule: "금 18:00" },
+    ];
+    cls.forEach((c, i) => db.classes.push({ ...c, teacher_id: me, created_at: `2026-09-0${i + 1}` }));
+
+    // [이름, 나이, 단계, 반, 지난달 완료 수, 이번 달 완료 수, 오늘 기록 여부]
+    const kids = [
+      ["박서윤", 7, "자유형 1단계", "c1", 1, 2, true],
+      ["이도윤", 8, "자유형 1단계", "c1", 2, 3, true],
+      ["최하린", 7, "배영 1단계", "c1", 0, 1, true],
+      ["김하늘", 9, "자유형 2단계", "c2", 2, 3, true],
+      ["정바다", 10, "자유형 2단계", "c2", 1, 3, true],
+      ["윤시우", 9, "자유형 2단계", "c2", 3, 4, false],
+      ["한지유", 11, "자유형 3단계", "c2", 1, 2, false],
+      ["오은우", 10, "배영 2단계", "c2", 0, 1, false],
+      ["강민준", 12, "자유형 3단계", "c3", 2, 2, false],
+    ];
+    kids.forEach(([name, age, level, class_id, prevDone, nowDone, today_], k) => {
+      const sid = "s" + (k + 1);
+      db.students.push({ id: sid, class_id, name, age, level, report_token: "demo-" + sid, created_at: "2026-09-01" });
+      const drills = db.drills.filter((d) => d.level === level);
+      const setAll = (date, done) => drills.forEach((d, i) =>
+        db.records.push({ student_id: sid, drill_id: d.id, lesson_date: date, status: i < done ? "done" : i === done ? "doing" : "none" }));
+      setAll(ymd(lastMonth), prevDone);
+      // 이번 달 수업 기록 (오늘 이전 3~5회)
+      const n = 3 + Math.floor(rand() * 3);
+      for (let j = n; j >= 1; j--) {
+        const d = addDays(today, -j * 3 - 1);
+        if (d < monthStart) continue;
+        const date = ymd(d);
+        setAll(date, j === 1 ? nowDone : Math.max(prevDone, nowDone - 1));
+        db.sessions.push({ id: uid(), student_id: sid, lesson_date: date, comment: rand() < 0.45 ? COMMENTS[Math.floor(rand() * COMMENTS.length)] : null,
+          video_path: j === 1 ? "demo:this" : null, input_seconds: 18 + Math.floor(rand() * 34), created_at: date });
+      }
+      db.sessions.push({ id: uid(), student_id: sid, lesson_date: ymd(lastMonth), comment: null, video_path: "demo:prev", input_seconds: 40 + Math.floor(rand() * 20), created_at: ymd(lastMonth) });
+      if (today_) {
+        setAll(T, nowDone);
+        db.sessions.push({ id: uid(), student_id: sid, lesson_date: T, comment: COMMENTS[k % COMMENTS.length], video_path: null, input_seconds: 16 + Math.floor(rand() * 25), created_at: T });
+      }
+    });
+    ["yes", "yes", "yes", "same", "yes", "yes", "no", "yes", "yes", "same", "yes", "yes"].forEach((answer, i) =>
+      db.surveys.push({ id: i + 1, student_id: "s" + ((i % 9) + 1), answer, created_at: ymd(addDays(today, -i)) }));
+    return db;
+  }
+
+  function load() {
+    try { const s = sessionStorage.getItem(KEY); if (s) return JSON.parse(s); } catch {}
+    const db = build(); save(db); return db;
+  }
+  function save(db) { try { sessionStorage.setItem(KEY, JSON.stringify(db)); } catch {} }
+  let DB = load();
+
+  function query(table) {
+    let op = "select", payload = null, opts = {}, single = false, maybe = false, cols = "*", order = null;
+    const filters = [];
+    const api = {
+      select(c) { if (op === "select") cols = c || "*"; return api; },
+      eq(k, v) { filters.push((r) => r[k] === v); return api; },
+      in(k, vs) { filters.push((r) => vs.includes(r[k])); return api; },
+      order(k, o = {}) { order = [k, o.ascending !== false]; return api; },
+      single() { single = true; return api; },
+      maybeSingle() { single = true; maybe = true; return api; },
+      insert(x) { op = "insert"; payload = x; return api; },
+      upsert(x, o) { op = "upsert"; payload = x; opts = o || {}; return api; },
+      delete() { op = "delete"; return api; },
+      then(res, rej) { return Promise.resolve().then(run).then(res, rej); },
+    };
+    function run() {
+      const rows = DB[table];
+      if (op === "select") {
+        let out = rows.filter((r) => filters.every((f) => f(r))).map((r) => ({ ...r }));
+        if (order) out.sort((a, b) => (a[order[0]] > b[order[0]] ? 1 : a[order[0]] < b[order[0]] ? -1 : 0) * (order[1] ? 1 : -1));
+        if (table === "classes" && cols.includes("students(")) out.forEach((c) => (c.students = DB.students.filter((s) => s.class_id === c.id).map((s) => ({ ...s }))));
+        if (single) {
+          if (!out.length && !maybe) return { data: null, error: { message: "찾을 수 없어요" } };
+          return { data: out[0] || null, error: null };
+        }
+        return { data: out, error: null };
+      }
+      const list = Array.isArray(payload) ? payload : payload ? [payload] : [];
+      if (op === "insert" || op === "upsert") {
+        const keys = (opts.onConflict || "").split(",").filter(Boolean);
+        list.forEach((x) => {
+          const hit = keys.length && rows.find((r) => keys.every((k) => r[k] === x[k]));
+          if (hit) return Object.assign(hit, x);
+          const row = { id: uid(), created_at: new Date().toISOString(), ...x };
+          if (table === "students" && !row.report_token) row.report_token = uid();
+          if (table === "classes" && !row.teacher_id) row.teacher_id = "demo-teacher";
+          rows.push(row);
+        });
+        save(DB);
+        return { data: null, error: null };
+      }
+      if (op === "delete") {
+        const gone = rows.filter((r) => filters.every((f) => f(r)));
+        DB[table] = rows.filter((r) => !gone.includes(r));
+        if (table === "students") {
+          const ids = gone.map((g) => g.id);
+          ["sessions", "records", "surveys"].forEach((t) => (DB[t] = DB[t].filter((r) => !ids.includes(r.student_id))));
+        }
+        save(DB);
+        return { data: null, error: null };
+      }
+    }
+    return api;
+  }
+
+  const session = () => {
+    let out = false;
+    try { out = sessionStorage.getItem("mg-demo-out") === "1"; } catch {}
+    return out ? null : { user: { id: "demo-teacher", email: "demo@mulgyeol.app" } };
+  };
+  const setOut = (v) => { try { v ? sessionStorage.setItem("mg-demo-out", "1") : sessionStorage.removeItem("mg-demo-out"); } catch {} };
+
+  function client() {
+    return {
+      from: query,
+      rpc(name, args) {
+        if (name === "get_report") {
+          const s = DB.students.find((x) => x.report_token === args.p_token);
+          if (!s) return Promise.resolve({ data: null, error: null });
+          const c = DB.classes.find((x) => x.id === s.class_id);
+          const t = DB.teachers.find((x) => x.id === c.teacher_id);
+          const sortD = (a, b) => (a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
+          return Promise.resolve({ error: null, data: {
+            student: { name: s.name, age: s.age, level: s.level }, class_name: c.name, teacher_name: t?.name,
+            drills: DB.drills.filter((d) => d.level === s.level).sort((a, b) => a.sort - b.sort).map((d) => ({ id: d.id, name: d.name })),
+            records: DB.records.filter((r) => r.student_id === s.id).map((r) => ({ drill_id: r.drill_id, date: r.lesson_date, status: r.status })).sort(sortD),
+            sessions: DB.sessions.filter((x) => x.student_id === s.id).map((x) => ({ date: x.lesson_date, comment: x.comment, video_path: x.video_path })).sort(sortD),
+          } });
+        }
+        if (name === "submit_survey") {
+          const s = DB.students.find((x) => x.report_token === args.p_token);
+          if (s) { DB.surveys.push({ id: uid(), student_id: s.id, answer: args.p_answer, created_at: new Date().toISOString() }); save(DB); }
+          return Promise.resolve({ data: null, error: null });
+        }
+        return Promise.resolve({ data: null, error: { message: "unknown rpc" } });
+      },
+      auth: {
+        getSession: () => Promise.resolve({ data: { session: session() } }),
+        signInWithPassword: () => { setOut(false); return Promise.resolve({ data: { session: session() }, error: null }); },
+        signUp: () => { setOut(false); return Promise.resolve({ data: { session: session() }, error: null }); },
+        signOut: () => { setOut(true); return Promise.resolve({ error: null }); },
+      },
+      storage: { from: () => ({ upload: () => Promise.resolve({ data: null, error: null }) }) },
+    };
+  }
+  function reset() { try { sessionStorage.removeItem(KEY); } catch {} DB = load(); }
+  return { client, reset };
+})();
+
+</script>
+<script>
+// ---------- 공통 기능 ----------
+// 모든 화면이 함께 쓰는 기능
+const CONFIGURED = !!window.MULGYEOL && !MULGYEOL.SUPABASE_URL.includes("YOUR-PROJECT") && !!window.supabase;
+const DEMO = !CONFIGURED;
+const sb = CONFIGURED
+  ? supabase.createClient(MULGYEOL.SUPABASE_URL, MULGYEOL.SUPABASE_ANON_KEY)
+  : MulgyeolDemo.client();
+
+const $ = (sel, el = document) => el.querySelector(sel);
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function ymd(d = new Date()) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function koDate(d = new Date()) {
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+}
+
+const md = (date) => Number(date.slice(5, 7)) + "/" + Number(date.slice(8, 10));
+
+function toast(msg) {
+  let t = $("#toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    t.setAttribute("role", "status");
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+// 영상 주소 (체험 모드 영상은 주소 없음)
+function videoUrl(path) {
+  if (!path || path.startsWith("demo:")) return null;
+  return `${MULGYEOL.SUPABASE_URL}/storage/v1/object/public/videos/${path}`;
+}
+
+function reportLink(token) {
+  return new URL(`?p=report&t=${token}`, location.href).href;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("링크를 복사했어요. 카카오톡에 붙여넣어 보내세요.");
+  } catch {
+    toast("복사하지 못했어요. 리포트 보기에서 주소를 복사해 주세요.");
+  }
+}
+
+// 체험 모드 안내 (config.js 설정 전)
+function guardConfig(target) {
+  if (DEMO) {
+    const box = document.createElement("div");
+    box.className = "notice";
+    box.innerHTML = "<b>체험 모드</b> · 예시 데이터로 보여주고 있어요. app.html 맨 위 Supabase 연결 정보를 넣으면 실제 데이터로 바뀝니다.";
+    (target || document.querySelector("main") || document.body).prepend(box);
+  }
+  return true;
+}
+
+// 강사 전용 화면: 로그인 안 했으면 로그인 화면으로
+async function requireTeacher() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) {
+    try { sessionStorage.removeItem("mg-nav"); } catch {}
+    location.href = "?p=login";
+    throw new Error("not logged in");
+  }
+  return data.session.user;
+}
+
+// ---------- 대시보드 왼쪽 메뉴 ----------
+const ICON = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15" width="7.5" height="6" rx="2"/></svg>',
+  wave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 8c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"/><path d="M2 13c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"/><path d="M2 18c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.8a3.3 3.3 0 0 1 0 6.4M18 14.8c1.8.6 3 2.3 3.5 5.2"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+};
+
+function renderSide(active, teacherName) {
+  const items = [
+    ["home", "?p=teacher", "대시보드", ICON.home],
+    ["record", "?p=teacher#today", "오늘 수업 기록", ICON.wave],
+    ["students", "?p=teacher#students", "회원 현황", ICON.users],
+    ["manage", "?p=teacher#manage", "반·회원 관리", ICON.gear],
+  ];
+  $("#side").innerHTML = `
+    <a class="brand" href="index.html" title="물결 소개 페이지로"><b>물결</b><span>수영 성장 기록 리포트</span></a>
+    <nav class="nav" aria-label="메뉴">
+      ${items.map(([k, href, label, icon]) => `<a href="${href}" class="${k === active ? "on" : ""}">${icon}${label}</a>`).join("")}
+    </nav>
+    <div class="wave-deco wave-lines" aria-hidden="true"></div>
+    <div class="me">
+      <div><b>${esc(teacherName || "")}</b> <span class="sub">강사</span></div>
+      <a href="#" id="logout" class="sub">로그아웃</a>
+    </div>`;
+  $("#logout").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await sb.auth.signOut();
+    try { sessionStorage.removeItem("mg-nav"); } catch {}
+    location.href = "?p=login";
+  });
+}
+
+// ---------- 뒤로 가기 ----------
+// 물결 안에서 지나온 화면을 순서대로 기억했다가, "뒤로"를 누르면 바로 전 화면으로 돌아감
+const NAV_KEY = "mg-nav";
+const here = () => location.search || "?p=teacher";
+function navStack() { try { return JSON.parse(sessionStorage.getItem(NAV_KEY)) || []; } catch { return []; } }
+function saveStack(s) { try { sessionStorage.setItem(NAV_KEY, JSON.stringify(s.slice(-30))); } catch {} }
+(function trackPage() {
+  const s = navStack(), cur = here();
+  if (s[s.length - 1] === cur) return;
+  if (s[s.length - 2] === cur) s.pop(); else s.push(cur);
+  saveStack(s);
+})();
+function canGoBack() { return navStack().length > 1; }
+function goBack(fallback) {
+  const s = navStack();
+  s.pop();
+  saveStack(s);
+  location.href = s[s.length - 1] || fallback;
+}
+// 뒤로 버튼 만들기: slot 맨 앞에 넣음. onlyIfHistory 이면 지나온 화면이 있을 때만 보임
+function addBackButton(slot, fallback, onlyIfHistory) {
+  if (!slot || (onlyIfHistory && !canGoBack())) return;
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "btn small back";
+  b.innerHTML = '<span aria-hidden="true">←</span> 뒤로';
+  b.addEventListener("click", () => goBack(fallback));
+  slot.prepend(b);
+}
+
+</script>
+<script>
+// ---------- 화면별 동작 ----------
+const PAGES = {
+  signup: { title: "물결 회원가입", init() {
+
+  addBackButton($("#backSlot"), "index.html");
+  guardConfig($("#form"));
+  const all = $("#agreeAll");
+  const items = [...document.querySelectorAll(".agree")];
+  all.addEventListener("change", () => items.forEach((c) => (c.checked = all.checked)));
+  items.forEach((c) => c.addEventListener("change", () => (all.checked = items.every((i) => i.checked))));
+
+  $("#form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("#submit").disabled = true;
+    $("#msg").textContent = "가입 중...";
+    const { data, error } = await sb.auth.signUp({
+      email: $("#email").value.trim(),
+      password: $("#password").value,
+      options: { data: { name: $("#name").value.trim() }, emailRedirectTo: new URL("?p=login", location.href).href },
+    });
+    $("#submit").disabled = false;
+    if (error) { $("#msg").textContent = "가입하지 못했어요: " + error.message; return; }
+    if (data.session) location.href = "?p=teacher";
+    else $("#msg").textContent = "확인 메일을 보냈어요. 메일의 링크를 누른 뒤 로그인해 주세요.";
+  });
+
+  } },
+  login: { title: "물결 로그인", init() {
+
+  addBackButton($("#backSlot"), "index.html");
+  guardConfig($("#form"));
+  if (DEMO) { $("#email").value = "demo@mulgyeol.app"; $("#password").value = "demo1234"; }
+  else sb.auth.getSession().then(({ data }) => { if (data.session) location.href = "?p=teacher"; });
+
+  $("#form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("#submit").disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email: $("#email").value.trim(), password: $("#password").value });
+    $("#submit").disabled = false;
+    if (error) { $("#msg").textContent = "이메일 또는 비밀번호를 다시 확인해 주세요."; return; }
+    location.href = "?p=teacher";
+  });
+
+  } },
+  teacher: { title: "물결 대시보드", init() {
+
+  const TODAY = ymd();
+  const MONTH = TODAY.slice(0, 7);
+  const TARGET = 70; // 학부모 체감도 성공 기준 (%)
+
+  async function load() {
+    const user = await requireTeacher();
+    const [me, cls, drl, rec, ses, srv] = await Promise.all([
+      sb.from("teachers").select("name").eq("id", user.id).maybeSingle(),
+      sb.from("classes").select("id,name,schedule,created_at,students(id,name,age,level,report_token)").order("created_at"),
+      sb.from("drills").select("id,level,level_order,sort").order("level_order"),
+      sb.from("records").select("student_id,drill_id,lesson_date,status").order("lesson_date"),
+      sb.from("sessions").select("student_id,lesson_date,comment,input_seconds").order("lesson_date"),
+      sb.from("surveys").select("answer,created_at"),
+    ]);
+    if (cls.error) { $("#classes").innerHTML = `<p class="sub">불러오지 못했어요: ${esc(cls.error.message)}</p>`; return; }
+
+    const name = me.data?.name || "";
+    renderSide("home", name);
+    $("#today").textContent = koDate();
+    $("#hello").textContent = name ? `${name} 강사님의 물결` : "대시보드";
+
+    const classes = cls.data;
+    const drills = drl.data || [];
+    const levels = [...new Set(drills.map((d) => d.level))];
+    const students = classes.flatMap((c) => (c.students || []).map((s) => ({ ...s, cls: c })));
+    const sessions = ses.data || [];
+    const surveys = srv.data || [];
+
+    // 회원별 최신 드릴 상태 → 진행률
+    const latest = {};
+    (rec.data || []).forEach((r) => ((latest[r.student_id] ||= {})[r.drill_id] = r.status));
+    const byLevel = {};
+    drills.forEach((d) => (byLevel[d.level] ||= []).push(d));
+    students.forEach((s) => {
+      const list = byLevel[s.level] || [];
+      const st = latest[s.id] || {};
+      s.progress = list.length ? Math.round((list.filter((d) => st[d.id] === "done").length / list.length) * 100) : 0;
+      const mine = sessions.filter((x) => x.student_id === s.id);
+      s.last = mine.length ? mine[mine.length - 1].lesson_date : null;
+    });
+
+    // ---------- KPI ----------
+    const doneToday = new Set(sessions.filter((x) => x.lesson_date === TODAY).map((x) => x.student_id));
+    const todayDone = students.filter((s) => doneToday.has(s.id)).length;
+    const monthSessions = sessions.filter((x) => x.lesson_date.startsWith(MONTH));
+    const timed = monthSessions.filter((x) => x.input_seconds);
+    const avgSec = timed.length ? Math.round(timed.reduce((a, x) => a + x.input_seconds, 0) / timed.length) : null;
+    const yes = surveys.filter((x) => x.answer === "yes").length;
+    const yesPct = surveys.length ? Math.round((yes / surveys.length) * 100) : null;
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+
+    $("#kpis").innerHTML = [
+      kpi("오늘 기록", `${todayDone}<small>/ ${students.length}명</small>`, `<div class="bar"><i style="width:${pct(todayDone, students.length)}%"></i></div>`, "수업 후 드릴 체크를 마친 회원"),
+      kpi("학부모 체감도", yesPct == null ? "–" : `${yesPct}<small>%</small>`,
+        yesPct == null ? "" : `<span class="chip ${yesPct >= TARGET ? "good" : "warn"}">${yesPct >= TARGET ? "목표 달성" : "목표 미달"}</span>`,
+        `"성과가 더 잘 보인다" 응답 · 목표 ${TARGET}% · ${surveys.length}건`),
+      kpi("평균 입력 시간", avgSec == null ? "–" : `${avgSec}<small>초</small>`, "", `회원 1명 기록 기준 · 이번 달 ${timed.length}건`),
+      kpi("이번 달 수업 기록", `${monthSessions.length}<small>회</small>`, "", `리포트를 받는 회원 ${students.length}명`),
+    ].join("");
+
+    // ---------- 오늘 수업 ----------
+    const doneClasses = classes.filter((c) => (c.students || []).length && (c.students || []).every((s) => doneToday.has(s.id))).length;
+    $("#todaySub").textContent = `${classes.length}개 반 중 ${doneClasses}개 반 기록 완료`;
+    $("#classes").innerHTML = classes.length ? classes.map((c) => {
+      const list = c.students || [];
+      const done = list.filter((s) => doneToday.has(s.id)).length;
+      const all = list.length && done === list.length;
+      return `
+        <div class="class-card">
+          <div class="row between"><div><h3>${esc(c.name)}</h3><p class="sub">${esc(c.schedule || "")} · ${list.length}명</p></div>
+            ${all ? `<span class="chip good">완료</span>` : `<span class="chip num">${done}/${list.length}</span>`}</div>
+          <div class="bar"><i style="width:${pct(done, list.length)}%"></i></div>
+          ${list.length ? `<a class="btn ${all ? "" : "primary"} small" href="?p=check&class=${c.id}">${all ? "기록 다시 보기" : done ? "이어서 기록하기" : "기록하기"}</a>` : `<a class="btn small" href="#manage">회원 추가하기</a>`}
+        </div>`;
+    }).join("") : `<p class="sub">아직 반이 없어요. 아래 반·회원 관리에서 첫 반을 만들어 주세요.</p>`;
+    const next = classes.find((c) => (c.students || []).some((s) => !doneToday.has(s.id)));
+    $("#quick").href = next ? `?p=check&class=${next.id}` : "#today-anchor";
+
+    // ---------- MVP 성공 기준 ----------
+    const count = (a) => surveys.filter((x) => x.answer === a).length;
+    const secs = timed.map((x) => x.input_seconds);
+    $("#criteria").innerHTML = `
+      <div class="panel-head"><h2>MVP 성공 기준</h2><span class="sub">시범 운영 4주 동안 확인</span></div>
+      <div class="list">
+        <div class="row between"><b>학부모 체감도</b><b class="num">${yesPct ?? "–"}%</b></div>
+        <div class="bar"><i style="width:${yesPct || 0}%"></i><span class="target" style="left:${TARGET}%" title="목표 ${TARGET}%"></span></div>
+        <p class="sub">세로선이 목표(${TARGET}%)예요.</p>
+      </div>
+      <div class="list">
+        ${[["네", "yes"], ["비슷해요", "same"], ["아니요", "no"]].map(([l, k]) => `
+          <div class="row" style="gap:10px"><span class="sub" style="width:60px">${l}</span>
+            <div class="bar" style="flex:1"><i style="width:${pct(count(k), surveys.length)}%"></i></div>
+            <span class="num sub" style="width:28px;text-align:right">${count(k)}</span></div>`).join("")}
+      </div>
+      <div class="list" style="border-top:1px solid var(--line);padding-top:12px">
+        <div class="row between"><b>강사 입력 시간</b><b class="num">${avgSec ?? "–"}초</b></div>
+        <p class="sub">${secs.length ? `가장 빠름 ${Math.min(...secs)}초 · 가장 느림 ${Math.max(...secs)}초. 시범 데이터로 적정 기준을 정해요.` : "기록이 쌓이면 표시돼요."}</p>
+      </div>`;
+
+    // ---------- 회원 현황 ----------
+    const sorted = [...students].sort((a, b) => a.cls.created_at.localeCompare(b.cls.created_at) || a.name.localeCompare(b.name, "ko"));
+    $("#studentTable").innerHTML = sorted.length ? `
+      <table>
+        <thead><tr><th>회원</th><th>반</th><th>단계</th><th>진행률</th><th>최근 기록</th><th>리포트</th></tr></thead>
+        <tbody>${sorted.map((s) => `
+          <tr>
+            <td><b>${esc(s.name)}</b> <span class="sub">${s.age ? s.age + "세" : ""}</span></td>
+            <td class="sub">${esc(s.cls.name)}</td>
+            <td>${esc(s.level)}</td>
+            <td><div class="row" style="gap:10px"><div class="bar"><i style="width:${s.progress}%"></i></div><span class="num">${s.progress}%</span></div></td>
+            <td class="sub num">${s.last ? (s.last === TODAY ? "오늘" : md(s.last)) : "–"}</td>
+            <td><div class="row"><button class="btn small" data-copy="${s.report_token}">링크 복사</button><a class="btn small" href="?p=report&t=${s.report_token}">보기</a></div></td>
+          </tr>`).join("")}</tbody>
+      </table>` : `<p class="sub">회원이 없어요.</p>`;
+
+    // ---------- 최근 코멘트 ----------
+    const names = Object.fromEntries(students.map((s) => [s.id, s]));
+    const feed = sessions.filter((x) => x.comment && names[x.student_id]).slice(-6).reverse();
+    $("#feed").innerHTML = feed.length ? feed.map((x) => `
+      <div class="feed-item"><span class="sub">${esc(names[x.student_id].name)} · ${esc(names[x.student_id].cls.name)} · ${x.lesson_date === TODAY ? "오늘" : md(x.lesson_date)}</span><p>${esc(x.comment)}</p></div>`).join("")
+      : `<p class="sub">아직 코멘트가 없어요.</p>`;
+
+    // ---------- 반·회원 관리 ----------
+    $("#manageList").innerHTML = classes.map((c) => `
+      <div class="class-card">
+        <div class="row between"><h3>${esc(c.name)} <span class="sub">${esc(c.schedule || "")}</span></h3><span class="sub">${(c.students || []).length}명</span></div>
+        <div class="chips">${(c.students || []).map((s) => `
+          <span class="chip">${esc(s.name)} <button class="linkish" data-del-student="${s.id}" data-name="${esc(s.name)}" aria-label="${esc(s.name)} 삭제" style="border:0;background:none;color:var(--muted);cursor:pointer;padding:0 0 0 2px">×</button></span>`).join("") || `<span class="sub">회원 없음</span>`}</div>
+      </div>`).join("");
+    $("#sClass").innerHTML = classes.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("");
+    $("#sLevel").innerHTML = levels.map((l) => `<option>${esc(l)}</option>`).join("");
+
+    if (location.hash) document.querySelector(location.hash === "#today" ? "#today-anchor" : location.hash)?.scrollIntoView();
+  }
+
+  function kpi(label, value, extra, foot) {
+    return `<div class="panel kpi"><span class="label">${label}</span><div class="value">${value}</div>${extra}<span class="foot">${foot}</span></div>`;
+  }
+
+  document.addEventListener("click", async (e) => {
+    const copy = e.target.closest("[data-copy]");
+    if (copy) return copyText(reportLink(copy.dataset.copy));
+    const del = e.target.closest("[data-del-student]");
+    if (del) {
+      if (del.dataset.confirm !== "1") {
+        del.dataset.confirm = "1";
+        del.textContent = "삭제?";
+        setTimeout(() => { del.dataset.confirm = ""; del.textContent = "×"; }, 3000);
+        return;
+      }
+      const { error } = await sb.from("students").delete().eq("id", del.dataset.delStudent);
+      if (error) return toast("삭제하지 못했어요: " + error.message);
+      toast(del.dataset.name + " 회원을 삭제했어요.");
+      load();
+    }
+  });
+
+  $("#studentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await sb.from("students").insert({
+      class_id: $("#sClass").value, name: $("#sName").value.trim(),
+      age: $("#sAge").value ? Number($("#sAge").value) : null, level: $("#sLevel").value,
+    });
+    if (error) return toast("추가하지 못했어요: " + error.message);
+    $("#sName").value = ""; $("#sAge").value = "";
+    toast("회원을 추가했어요. 회원 현황에서 리포트 링크를 복사할 수 있어요.");
+    load();
+  });
+
+  $("#classForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const { error } = await sb.from("classes").insert({ name: $("#className").value.trim(), schedule: $("#classSchedule").value.trim() || null });
+    if (error) return toast("반을 만들지 못했어요: " + error.message);
+    e.target.reset();
+    toast("반을 만들었어요.");
+    load();
+  });
+
+  addBackButton($("#backSlot"), "index.html");
+  guardConfig();
+  load();
+
+  } },
+  check: { title: "물결 드릴 체크", init() {
+
+  const CLASS_ID = new URLSearchParams(location.search).get("class");
+  const TODAY = ymd();
+  const LABEL = { done: "완료", doing: "진행", none: "미실시" };
+
+  let students = [], drillsByLevel = {}, latest = {}, todaySession = {};
+  let idx = 0, picks = {}, startedAt = 0;
+
+  async function load() {
+    const user = await requireTeacher();
+    const me = await sb.from("teachers").select("name").eq("id", user.id).maybeSingle();
+    renderSide("record", me.data?.name);
+    const { data: cls, error } = await sb.from("classes")
+      .select("name, schedule, students(id,name,age,level,report_token)").eq("id", CLASS_ID).single();
+    if (error) { $("#view").innerHTML = `<p class="sub">반을 찾을 수 없어요. 대시보드에서 다시 골라 주세요.</p>`; return; }
+    students = (cls.students || []).sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    $("#clsLabel").textContent = `${koDate()} · ${cls.name} ${cls.schedule || ""}`;
+    if (!students.length) { $("#view").innerHTML = `<p class="sub">이 반에 회원이 없어요.</p>`; return; }
+
+    const ids = students.map((s) => s.id);
+    const [{ data: drills }, { data: records }, { data: sessions }] = await Promise.all([
+      sb.from("drills").select("id,level,name,sort").order("sort"),
+      sb.from("records").select("student_id,drill_id,lesson_date,status").in("student_id", ids).order("lesson_date"),
+      sb.from("sessions").select("student_id,comment,video_path").in("student_id", ids).eq("lesson_date", TODAY),
+    ]);
+    drills.forEach((d) => (drillsByLevel[d.level] ||= []).push(d));
+    records.forEach((r) => ((latest[r.student_id] ||= {})[r.drill_id] = r.status));
+    sessions.forEach((s) => (todaySession[s.student_id] = s));
+
+    const first = students.findIndex((s) => !todaySession[s.id]);
+    idx = first === -1 ? 0 : first;
+    render();
+  }
+
+  function renderRoster() {
+    $("#roster").innerHTML = students.map((s, i) =>
+      `<button type="button" data-i="${i}" class="${i === idx ? "cur" : ""} ${todaySession[s.id] ? "saved" : ""}">${esc(s.name)}</button>`).join("");
+    const saved = students.filter((s) => todaySession[s.id]).length;
+    $("#counter").textContent = `오늘 ${saved}/${students.length}명 기록`;
+  }
+
+  function render() {
+    const s = students[idx];
+    const drills = drillsByLevel[s.level] || [];
+    const prev = latest[s.id] || {};
+    const sess = todaySession[s.id] || {};
+    picks = {};
+    drills.forEach((d) => (picks[d.id] = prev[d.id] || "none"));
+    startedAt = Date.now();
+    const done = drills.filter((d) => prev[d.id] === "done").length;
+    const pct = drills.length ? Math.round((done / drills.length) * 100) : 0;
+
+    $("#title").textContent = s.name;
+    renderRoster();
+    $("#view").innerHTML = `
+      <div class="panel">
+        <div class="panel-head"><h2>${esc(s.level)} 드릴</h2><span class="sub">지난 기록이 미리 선택되어 있어요. 바뀐 것만 눌러 주세요.</span></div>
+        <div>
+          ${drills.map((d) => `
+            <div class="drill">
+              <span>${esc(d.name)}</span>
+              <div class="tri" data-drill="${d.id}" role="group" aria-label="${esc(d.name)}">
+                ${["done", "doing", "none"].map((v) => `<button type="button" data-v="${v}" class="${picks[d.id] === v ? "on" : ""}" aria-pressed="${picks[d.id] === v}">${LABEL[v]}</button>`).join("")}
+              </div>
+            </div>`).join("") || `<p class="sub">이 단계의 드릴이 없어요.</p>`}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="row between"><div><h2>${esc(s.name)}</h2><p class="sub">${s.age ? s.age + "세 · " : ""}${esc(s.level)}</p></div>
+          ${sess.student_id ? `<span class="chip good">오늘 기록함</span>` : ""}</div>
+        <div class="list">
+          <div class="row between"><span class="sub">현재 진행률</span><b class="num">${pct}%</b></div>
+          <div class="bar"><i style="width:${pct}%"></i></div>
+        </div>
+        <label>한 줄 코멘트 (선택)<input id="comment" maxlength="120" value="${esc(sess.comment || "")}" placeholder="예: 호흡할 때 고개가 많이 들려요"></label>
+        <label>영상 추가 (선택 · 10~20초 · 50MB 이하)<input id="video" type="file" accept="video/*"></label>
+        ${sess.video_path ? `<p class="sub">오늘 올린 영상이 있어요. 새로 고르면 바뀌어요.</p>` : ""}
+        <button class="btn primary block" id="save">${idx < students.length - 1 ? "저장하고 다음 회원 →" : "저장하고 마치기"}</button>
+        <button class="btn block" id="skip" type="button">건너뛰기</button>
+      </div>`;
+  }
+
+  document.addEventListener("click", async (e) => {
+    const r = e.target.closest("#roster button");
+    if (r) { idx = Number(r.dataset.i); render(); return; }
+
+    const b = e.target.closest(".tri button");
+    if (b) {
+      const tri = b.parentElement;
+      picks[tri.dataset.drill] = b.dataset.v;
+      tri.querySelectorAll("button").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+      return;
+    }
+    if (e.target.id === "skip") return next();
+    if (e.target.id !== "save") return;
+
+    const btn = e.target;
+    const s = students[idx];
+    btn.disabled = true;
+    btn.textContent = "저장 중...";
+    try {
+      let video_path;
+      const file = $("#video").files[0];
+      if (file) {
+        if (file.size > 50 * 1024 * 1024) throw new Error("영상이 50MB보다 커요. 더 짧게 찍어 주세요.");
+        const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+        video_path = DEMO ? "demo:upload" : `${s.report_token}/${TODAY}-${Date.now()}.${ext}`;
+        const up = await sb.storage.from("videos").upload(video_path, file, { contentType: file.type || "video/mp4" });
+        if (up.error) throw up.error;
+      }
+      const rows = Object.entries(picks).map(([drill_id, status]) => ({ student_id: s.id, drill_id: Number(drill_id), lesson_date: TODAY, status }));
+      if (rows.length) {
+        const r1 = await sb.from("records").upsert(rows, { onConflict: "student_id,drill_id,lesson_date" });
+        if (r1.error) throw r1.error;
+      }
+      const session = {
+        student_id: s.id, lesson_date: TODAY,
+        comment: $("#comment").value.trim() || null,
+        input_seconds: Math.round((Date.now() - startedAt) / 1000),
+      };
+      if (video_path) session.video_path = video_path;
+      const r2 = await sb.from("sessions").upsert(session, { onConflict: "student_id,lesson_date" });
+      if (r2.error) throw r2.error;
+
+      latest[s.id] = { ...(latest[s.id] || {}), ...picks };
+      todaySession[s.id] = { ...(todaySession[s.id] || {}), ...session };
+      toast(`${s.name} 기록을 저장했어요. (${session.input_seconds}초)`);
+      next();
+    } catch (err) {
+      toast("저장하지 못했어요: " + (err.message || err));
+      btn.disabled = false;
+      btn.textContent = "다시 저장";
+    }
+  });
+
+  function next() {
+    if (idx < students.length - 1) { idx++; render(); window.scrollTo(0, 0); }
+    else location.href = "?p=teacher";
+  }
+
+  addBackButton($("#backSlot"), "?p=teacher");
+  guardConfig();
+  load();
+
+  } },
+  report: { title: "물결 성장 리포트", init() {
+
+  const TOKEN = new URLSearchParams(location.search).get("t");
+  let R = null, month = "", minMonth = "", maxMonth = "";
+
+  const mKey = (d) => d.slice(0, 7);
+  function shift(key, n) {
+    const [y, m] = key.split("-").map(Number);
+    const d = new Date(y, m - 1 + n, 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+  const mLabel = (key) => Number(key.slice(5)) + "월";
+
+  // 해당 월 말일 기준, 드릴별 마지막 상태
+  function statusAt(key) {
+    const end = key + "-31";
+    const st = {};
+    R.records.forEach((r) => { if (r.date <= end) st[r.drill_id] = r.status; });
+    return st;
+  }
+  function progress(key) {
+    if (!R.drills.length) return 0;
+    const st = statusAt(key);
+    return Math.round((R.drills.filter((d) => st[d.id] === "done").length / R.drills.length) * 100);
+  }
+
+  async function load() {
+    if (!TOKEN) { $("#view").innerHTML = `<div class="panel"><p>링크가 올바르지 않아요. 강사님께 다시 받아 주세요.</p></div>`; return; }
+    const { data, error } = await sb.rpc("get_report", { p_token: TOKEN });
+    if (error || !data) { $("#view").innerHTML = `<div class="panel"><p>리포트를 찾을 수 없어요. 강사님께 링크를 다시 받아 주세요.</p></div>`; return; }
+    R = data;
+    const dates = [...R.records.map((r) => r.date), ...R.sessions.map((s) => s.date)].sort();
+    maxMonth = mKey(ymd());
+    minMonth = dates.length ? mKey(dates[0]) : maxMonth;
+    month = dates.length ? mKey(dates[dates.length - 1]) : maxMonth;
+    render();
+  }
+
+  function render() {
+    const s = R.student;
+    const now = progress(month);
+    const hasPrev = month > minMonth;
+    const before = hasPrev ? progress(shift(month, -1)) : 0;
+    const diff = now - before;
+    const st = statusAt(month);
+    const inMonth = R.sessions.filter((x) => mKey(x.date) === month);
+    const thisVid = [...inMonth].reverse().find((x) => x.video_path);
+    const prevVid = [...R.sessions].reverse().find((x) => x.video_path && x.date < month + "-01");
+    const comment = [...inMonth].reverse().find((x) => x.comment);
+    const done = R.drills.filter((d) => st[d.id] === "done");
+    const doing = R.drills.filter((d) => st[d.id] === "doing");
+
+    $("#monthLabel").textContent = month.slice(0, 4) + "년 " + mLabel(month);
+    $("#prevM").disabled = month <= minMonth;
+    $("#nextM").disabled = month >= maxMonth;
+    document.title = `${s.name}의 ${mLabel(month)} 수영 리포트`;
+
+    const vid = (v, label) => {
+      if (!v) return `<div class="vbox"><div class="empty">${label} 영상이 아직 없어요</div><span class="sub">${label}</span></div>`;
+      const url = videoUrl(v.video_path);
+      const when = md(v.date);
+      return url
+        ? `<div class="vbox"><video src="${url}" controls playsinline preload="metadata"></video><span class="sub">${label} · ${when}</span></div>`
+        : `<div class="vbox"><div class="empty wave-lines" style="background-position:center">예시 영상<br>(체험 모드)</div><span class="sub">${label} · ${when}</span></div>`;
+    };
+
+    let surveyed = false;
+    try { surveyed = localStorage.getItem(`mg-survey-${TOKEN}-${month}`) === "1"; } catch {}
+
+    $("#view").innerHTML = `
+      <div class="list" style="gap:6px;padding-top:6px">
+        <span class="eyebrow">${esc(R.class_name)} · ${esc(R.teacher_name || "")} 강사 · 이번 달 수업 기록 ${inMonth.length}회</span>
+        <h1>${esc(s.name)}의 ${mLabel(month)} 수영 리포트</h1>
+      </div>
+
+      <div class="panel">
+        <div class="row between" style="align-items:end">
+          <div><span class="sub">${esc(s.level)} 진행률</span><div class="big-progress">${now}%</div></div>
+          ${hasPrev ? `<span class="chip ${diff > 0 ? "good" : ""}">지난달보다 ${diff >= 0 ? "+" : ""}${diff}%p</span>` : ""}
+        </div>
+        <div class="bar"><i style="width:${now}%"></i></div>
+        <p class="sub">${hasPrev ? `지난달 ${before}% → 이번 달 ${now}%` : "첫 달 기록이에요. 다음 달부터 변화를 비교해 드려요."}</p>
+      </div>
+
+      <div class="panel">
+        <h2>전후 영상 비교</h2>
+        <div class="split">${vid(prevVid, "이전")}${vid(thisVid, "이번 달")}</div>
+      </div>
+
+      <div class="panel">
+        <h2>드릴</h2>
+        <span class="sub">지금까지 완료</span>
+        <div class="chips">${done.map((d) => `<span class="chip done">${esc(d.name)}</span>`).join("") || `<span class="sub">아직 없어요</span>`}</div>
+        ${doing.length ? `<span class="sub">연습 중</span><div class="chips">${doing.map((d) => `<span class="chip">${esc(d.name)}</span>`).join("")}</div>` : ""}
+      </div>
+
+      ${comment ? `<div class="panel"><h2>강사 한마디</h2><p>${esc(comment.comment)}</p><span class="sub">${md(comment.date)} 수업</span></div>` : ""}
+
+      <div class="panel" id="survey">
+        ${surveyed ? `<b>응답해 주셔서 감사합니다.</b>`
+          : `<b>이전(전화·월 1회 영상)보다 아이의 성과가 잘 보이나요?</b>
+             <div class="row">
+               <button class="btn small" style="flex:1" data-a="yes">네</button>
+               <button class="btn small" style="flex:1" data-a="same">비슷해요</button>
+               <button class="btn small" style="flex:1" data-a="no">아니요</button>
+             </div>`}
+      </div>`;
+  }
+
+  document.addEventListener("click", async (e) => {
+    const a = e.target.closest("[data-a]");
+    if (!a) return;
+    const { error } = await sb.rpc("submit_survey", { p_token: TOKEN, p_answer: a.dataset.a });
+    if (error) return toast("응답을 보내지 못했어요. 잠시 후 다시 눌러 주세요.");
+    try { localStorage.setItem(`mg-survey-${TOKEN}-${month}`, "1"); } catch {}
+    $("#survey").innerHTML = `<b>응답해 주셔서 감사합니다.</b>`;
+  });
+  $("#prevM").addEventListener("click", () => { if (month > minMonth) { month = shift(month, -1); render(); } });
+  $("#nextM").addEventListener("click", () => { if (month < maxMonth) { month = shift(month, 1); render(); } });
+
+  const FROM_HOME = new URLSearchParams(location.search).get("from") === "home"; // 랜딩의 "리포트 예시 보기"로 들어온 경우
+  addBackButton($("#backSlot"), FROM_HOME ? "index.html" : "?p=teacher", !FROM_HOME); // 학부모가 링크로 바로 열면 버튼 없음
+  guardConfig();
+  load();
+
+  } },
+};
+
+// ---------- 화면 고르기 (기본: 대시보드) ----------
+(function route() {
+  const name = new URLSearchParams(location.search).get("p") || "teacher";
+  const page = PAGES[name] ? name : "teacher";
+  document.body.prepend(document.getElementById("page-" + page).content.cloneNode(true));
+  document.title = PAGES[page].title;
+  PAGES[page].init();
+})();
+</script>
+</body>
+</html>

@@ -34,14 +34,14 @@
 
 ## 🖥️ 화면 구성
 
-| 번호 | 화면 | 파일 | 사용자 |
+| 번호 | 화면 | 주소 | 사용자 |
 |---|---|---|---|
-| S1 | 소개페이지 | `index.html` | 누구나 |
-| S2 | 강사 회원가입 | `signup.html` | 강사 |
-| S3 | 로그인 | `login.html` | 강사 |
-| S4 | 강사 대시보드 (오늘 수업 · MVP 성공 기준 · 회원 현황 · 반/회원 관리) | `teacher.html` | 강사 |
-| S5 | 드릴 체크 입력 | `check.html` | 강사 |
-| S6 | 학부모 성장 리포트 (로그인 없이 링크로 열람) | `report.html` | 학부모 |
+| S1 | 랜딩페이지 | `index.html` | 누구나 |
+| S2 | 강사 회원가입 | `app.html?p=signup` | 강사 |
+| S3 | 로그인 | `app.html?p=login` | 강사 |
+| S4 | 강사 대시보드 (오늘 수업 · MVP 성공 기준 · 회원 현황 · 반/회원 관리) | `app.html?p=teacher` | 강사 |
+| S5 | 드릴 체크 입력 | `app.html?p=check&class=…` | 강사 |
+| S6 | 학부모 성장 리포트 (로그인 없이 링크로 열람) | `app.html?p=report&t=…` | 학부모 |
 
 ### 서비스 흐름
 
@@ -69,7 +69,7 @@
 | 구분 | 사용 기술 |
 |---|---|
 | 화면 | HTML, CSS, JavaScript (빌드 도구 없음) |
-| 배포 | GitHub Pages |
+| 배포 | Vercel (GitHub 저장소 연결, 자동 배포) |
 | 데이터 · 로그인 · 영상 저장 | Supabase (PostgreSQL, Auth, Storage) |
 | 보안 | Row Level Security: 강사는 자기 반만, 학부모는 아이별 비밀 링크로만 열람 |
 
@@ -77,40 +77,37 @@
 
 ```
 mulgyeo/
-├── index.html        # S1 소개
-├── signup.html       # S2 강사 회원가입
-├── login.html        # S3 로그인
-├── teacher.html      # S4 강사 대시보드
-├── check.html        # S5 드릴 체크
-├── report.html       # S6 학부모 리포트
-├── style.css         # 디자인 (은빛 물결 테마, 라이트/다크)
-├── common.js         # 공통 기능, 메뉴, 뒤로 가기
-├── demo.js           # 체험 모드 예시 데이터
-├── config.js         # Supabase 연결 정보
-└── supabase/
-    └── schema.sql    # 데이터베이스 (테이블 · 보안 규칙 · 드릴 목록)
+├── index.html        # 랜딩페이지 (서비스 소개)
+├── app.html          # 시스템 전체: 회원가입 · 로그인 · 대시보드 · 드릴 체크 · 학부모 리포트
+│                     #   (디자인 · 기능 · 체험 모드 예시 데이터 · Supabase 연결 정보 포함)
+├── README.md
+└── schema.sql        # 데이터베이스 (Supabase SQL Editor 에 붙여넣는 파일)
 ```
 
 ---
 
 ## 🚀 실행 방법
 
-### 바로 둘러보기 (체험 모드)
+### Vercel 로 배포하기
 
-GitHub Pages 를 켜면 바로 예시 데이터로 모든 화면을 둘러볼 수 있어요.
+1. https://vercel.com 에서 **Continue with GitHub** 로 로그인
+2. **Add New… → Project** → 저장소 목록에서 `mulgyeo` 옆 **Import**
+3. Framework Preset: **Other** (그대로 두면 됨) → **Deploy**
+4. 1분 뒤 `https://mulgyeo.vercel.app` 같은 주소가 생겨요 (이름이 겹치면 뒤에 글자가 붙어요)
+   - 랜딩: `/` · 시스템: `/app.html`
+5. 이후 GitHub 에 파일을 올릴 때마다 Vercel 이 자동으로 다시 배포해요
 
-1. 저장소 **Settings → Pages**
-2. Source: **Deploy from a branch** / Branch: **main**, **(root)** → **Save**
-3. 1~2분 뒤 `https://jinye10.github.io/mulgyeo/` 접속
+배포 직후에는 예시 데이터로 움직이는 **체험 모드**라 바로 모든 화면을 둘러볼 수 있어요.
 
 ### 실제 데이터로 쓰기 (Supabase 연결)
 
 **1. Supabase 프로젝트 만들기**
 - https://supabase.com 가입 → **New project** (Region: Northeast Asia (Seoul))
-- **SQL Editor** 에 `supabase/schema.sql` 전체를 붙여넣고 **Run** (한 번만)
+- **SQL Editor** 에 `schema.sql` 전체를 붙여넣고 **Run** (한 번만)
 
-**2. `config.js` 수정**
-- Supabase **Project Settings → API** 의 Project URL 과 anon public 키를 붙여넣기
+**2. `app.html` 맨 위 연결 정보 수정**
+- Supabase **Project Settings → API** 의 Project URL 과 anon public 키를
+  `app.html` 맨 위 `✏️ Supabase 연결 정보` 부분에 붙여넣기
 
 ```js
 window.MULGYEOL = {
@@ -123,8 +120,8 @@ window.MULGYEOL = {
 
 **3. Supabase 에 내 주소 등록**
 - **Authentication → URL Configuration**
-  - Site URL: `https://jinye10.github.io/mulgyeo/`
-  - Redirect URLs: `https://jinye10.github.io/mulgyeo/**`
+  - Site URL: Vercel 주소 (예: `https://mulgyeo.vercel.app/`)
+  - Redirect URLs: Vercel 주소 뒤에 `/**` (예: `https://mulgyeo.vercel.app/**`)
 - (선택) 시범 기간엔 **Authentication → Sign In / Providers → Email** 에서 Confirm email 끄기
 
 **4. 사용 순서**
