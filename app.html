@@ -458,6 +458,18 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
 #students table { min-width: 860px; }
 #students th, #students td.sub, #students td .btn { white-space: nowrap; }
 #students td .row { flex-wrap: nowrap; gap: 6px; }
+.guest-note { font-size: 12px; }
+
+/* 보내기 창 */
+.sheet-wrap {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(20, 24, 48, .38); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.sheet { width: min(440px, 100%); background: var(--glass-strong); gap: 12px; }
+.sheet h2 { font-size: 18px; }
+.sheet input { font-size: 13.5px; }
+@media (max-width: 520px) { .sheet-wrap { place-items: end center; } .sheet { border-radius: 20px 20px 16px 16px; } }
 
   </style>
 </head>
@@ -512,9 +524,9 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
       <p id="resetMsg" class="sub" role="status"></p>
     </div>
     <p class="sub">처음이신가요? <a href="?p=signup">강사 회원가입</a> · 로그인 상태는 이 기기에 유지돼요.</p>
-    <div class="qa-entry" id="qaEntry">
-      <a class="btn block" href="?p=qa">🔧 로그인 없이 점검 모드로 둘러보기</a>
-      <span class="sub">예시 데이터로 모든 기능을 확인해요. 실제 데이터에는 저장되지 않아요.</span>
+    <div class="qa-entry">
+      <a class="btn block" href="?p=teacher&guest=1">게스트로 둘러보기</a>
+      <span class="sub">가입 없이 예시 반·회원으로 모든 기능을 써 볼 수 있어요. 입력한 내용은 저장되지 않아요.</span>
     </div>
   </form>
 </main>
@@ -635,26 +647,6 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
   <div id="view" class="list" style="gap:14px"><p class="sub">리포트를 불러오는 중...</p></div>
 </main>
 </template>
-<template id="page-qa">
-<!-- 출시 전 점검: 로그인 없이 모든 화면·기능 확인 (예시 데이터) -->
-<main class="solo wide" style="max-width:820px">
-  <div class="topbar">
-    <a class="brand" href="index.html"><b>물결</b></a>
-    <div class="right"><span class="sub num" id="progress"></span></div>
-  </div>
-  <header class="panel panel-wave wave-lines" style="gap:8px">
-    <span class="eyebrow">출시 전 점검</span>
-    <h1>로그인 없이 모든 기능 확인하기</h1>
-    <p class="sub">예시 데이터(반 3개, 회원 9명)로 움직여요. 무엇을 눌러도 실제 Supabase 데이터에는 저장되지 않아요. 확인한 항목은 체크해 두면 이 브라우저에 기억돼요.</p>
-    <div class="row wrap" style="margin-top:6px">
-      <a class="btn primary" href="?p=teacher">대시보드로 바로 들어가기</a>
-      <button class="btn" id="reset" type="button">예시 데이터 처음으로</button>
-      <button class="btn" id="uncheck" type="button">체크 모두 해제</button>
-    </div>
-  </header>
-  <section class="qa-list" id="list"></section>
-</main>
-</template>
 <template id="page-reset">
 <!-- 비밀번호 재설정: 메일의 링크를 누르면 이 화면으로 와요 -->
 <main class="auth">
@@ -760,7 +752,7 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
 // (브라우저 탭을 닫으면 예시 데이터는 처음 상태로 돌아갑니다)
 // =========================================================
 window.MulgyeolDemo = (function () {
-  const KEY = "mg-demo-db-v3";
+  const KEY = "mg-demo-db-v4";
   const pad = (n) => String(n).padStart(2, "0");
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -791,7 +783,7 @@ window.MulgyeolDemo = (function () {
     const lastMonth = addDays(monthStart, -18);
     const db = { teachers: [], drills: [], classes: [], students: [], sessions: [], records: [], surveys: [], call_logs: [] };
     const me = "demo-teacher";
-    db.teachers.push({ id: me, name: "김물결" });
+    db.teachers.push({ id: me, name: "게스트" });
     let id = 1;
     DRILLS.forEach(([level, order, names]) => names.forEach((name, i) => db.drills.push({ id: id++, level, level_order: order, name, sort: i + 1 })));
 
@@ -978,18 +970,20 @@ window.MulgyeolDemo = (function () {
 // 모든 화면이 함께 쓰는 기능
 const CONFIGURED = !!window.MULGYEOL && !MULGYEOL.SUPABASE_URL.includes("YOUR-PROJECT") && !!window.supabase;
 
-// 점검 모드: 로그인 없이 예시 데이터로 모든 기능을 확인 (실제 데이터에는 저장되지 않음)
-// 켜기: 주소 뒤에 ?qa=1 (또는 점검 화면) · 끄기: ?qa=0 또는 "점검 끝내기"
-const QA = (function () {
+// 게스트: 가입·로그인 없이 일반 강사 화면을 그대로 써 보기 (예시 데이터, 저장되지 않음)
+// 들어가기: 주소 뒤에 ?guest=1 ("게스트로 둘러보기" 버튼) · 나가기: 로그아웃, 또는 로그인·가입 화면으로 이동
+const GUEST = (function () {
   const q = new URLSearchParams(location.search);
-  const flag = q.get("qa") ?? (q.get("p") === "qa" || location.pathname.endsWith("?p=qa") ? "1" : null);
+  const page = q.get("p") || location.pathname.split("/").pop().replace(".html", "");
+  let flag = q.get("guest") ?? q.get("qa");
+  if (flag === null && ["login", "signup", "reset"].includes(page)) flag = "0"; // 실제 로그인 화면에선 게스트 끝
   try {
-    if (flag === "1") { sessionStorage.setItem("mg-qa", "1"); sessionStorage.removeItem("mg-demo-out"); }
-    if (flag === "0") sessionStorage.removeItem("mg-qa");
-    return sessionStorage.getItem("mg-qa") === "1";
+    if (flag === "1") { sessionStorage.setItem("mg-guest", "1"); sessionStorage.removeItem("mg-demo-out"); }
+    if (flag === "0") sessionStorage.removeItem("mg-guest");
+    return sessionStorage.getItem("mg-guest") === "1";
   } catch { return flag === "1"; }
 })();
-const DEMO = !CONFIGURED || QA;
+const DEMO = !CONFIGURED || GUEST;
 const sb = DEMO
   ? MulgyeolDemo.client()
   : supabase.createClient(MULGYEOL.SUPABASE_URL, MULGYEOL.SUPABASE_ANON_KEY);
@@ -1048,16 +1042,9 @@ async function copyText(text) {
   window.prompt("아래 링크를 길게 눌러(또는 Ctrl+C) 복사해 주세요", text);
 }
 
-// 체험·점검 모드 안내
+// 체험 모드 안내 (게스트는 안내 띠 없이 일반 화면 그대로)
 function guardConfig(target) {
-  if (QA) {
-    const bar = document.createElement("div");
-    bar.className = "qa-bar";
-    bar.innerHTML = `<span><b>🔧 점검 모드</b> · 로그인 없이 예시 데이터로 확인 중이에요. 실제 데이터에는 저장되지 않아요.</span>
-      <span class="row"><a class="btn small" href="?p=qa">점검 목록</a><a class="btn small" href="?p=login&qa=0">점검 끝내기</a></span>`;
-    (target || document.querySelector("main") || document.body).prepend(bar);
-    return true;
-  }
+  if (GUEST) return true;
   if (DEMO) {
     const box = document.createElement("div");
     box.className = "notice";
@@ -1098,16 +1085,16 @@ function renderSide(active, teacherName) {
     <nav class="nav" aria-label="메뉴">
       ${items.map(([k, href, label, icon]) => `<a href="${href}" class="${k === active ? "on" : ""}">${icon}${label}</a>`).join("")}
     </nav>
-    <a class="nav-qa ${QA ? "on" : ""}" href="${QA ? "?p=login&qa=0" : "?p=qa"}">${QA ? "🔧 점검 끝내기" : "🔧 점검 모드"}</a>
     <div class="wave-deco wave-lines" aria-hidden="true"></div>
     <div class="me">
-      <div><b>${esc(teacherName || "")}</b> <span class="sub">강사</span></div>
-      <a href="#" id="logout" class="sub">로그아웃</a>
+      ${GUEST
+        ? `<div><b>게스트</b> <span class="sub">둘러보는 중</span></div><span class="sub guest-note">입력한 내용은 저장되지 않아요</span><a href="#" id="logout" class="sub">게스트 나가기</a>`
+        : `<div><b>${esc(teacherName || "")}</b> <span class="sub">강사</span></div><a href="#" id="logout" class="sub">로그아웃</a>`}
     </div>`;
   $("#logout").addEventListener("click", async (e) => {
     e.preventDefault();
     await sb.auth.signOut();
-    try { sessionStorage.removeItem("mg-nav"); } catch {}
+    try { sessionStorage.removeItem("mg-nav"); sessionStorage.removeItem("mg-guest"); } catch {}
     location.href = "?p=login";
   });
 }
@@ -1143,17 +1130,59 @@ function addBackButton(slot, fallback, onlyIfHistory) {
 }
 
 // ---------- 리포트 보내기 (휴대폰: 카카오톡 등 공유 창 / PC: 링크 복사) ----------
-async function shareReport(token, name) {
+// 보내기 창: 링크를 화면에 보여 주고 [링크 복사] · [카카오톡 등으로 보내기](휴대폰) 중에 고름
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+function shareReport(token, name) {
   const url = reportLink(token);
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: `${name}의 수영 리포트`, text: `${name}의 수영 성장 리포트예요. 아래 링크로 확인해 주세요.`, url });
-      return;
-    } catch (err) {
-      if (err && err.name === "AbortError") return; // 공유 창을 닫음
+  const msg = `${name}의 수영 성장 리포트예요. 아래 링크로 확인해 주세요.\n${url}`;
+  document.getElementById("shareSheet")?.remove();
+  const wrap = document.createElement("div");
+  wrap.id = "shareSheet";
+  wrap.className = "sheet-wrap";
+  wrap.innerHTML = `
+    <div class="sheet panel" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <div class="row between"><h2 id="shareTitle">${esc(name)} 리포트 보내기</h2><button type="button" class="btn small" data-close aria-label="닫기">닫기</button></div>
+      <p class="sub">이 링크를 ${esc(name)} 보호자에게만 보내 주세요. 로그인 없이 바로 열려요.</p>
+      <input id="shareUrl" readonly value="${esc(url)}" aria-label="리포트 링크">
+      <div class="list" style="gap:8px">
+        ${IS_MOBILE && navigator.share ? `<button type="button" class="btn primary block" data-native>카카오톡 등 다른 앱으로 보내기</button>` : ""}
+        <button type="button" class="btn ${IS_MOBILE && navigator.share ? "" : "primary"} block" data-copy-link>링크 복사</button>
+        <button type="button" class="btn block" data-copy-msg>안내 문구와 함께 복사</button>
+        <a class="btn block" href="${esc(url)}" target="_blank" rel="noopener">리포트 미리 보기</a>
+      </div>
+      <p class="sub" id="shareDone" role="status"></p>
+    </div>`;
+  document.body.appendChild(wrap);
+  const input = wrap.querySelector("#shareUrl");
+  const done = (t) => { wrap.querySelector("#shareDone").textContent = t; };
+  const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  input.addEventListener("focus", () => input.select());
+  wrap.addEventListener("click", async (e) => {
+    if (e.target === wrap || e.target.closest("[data-close]")) return close();
+    if (e.target.closest("[data-copy-link]")) { if (await copyQuiet(url, input)) done("✓ 링크를 복사했어요. 카카오톡 대화창에 붙여넣어 보내세요."); else done("자동 복사가 막혀 있어요. 위 링크를 길게 눌러(또는 Ctrl+C) 복사해 주세요."); }
+    if (e.target.closest("[data-copy-msg]")) { if (await copyQuiet(msg, input)) done("✓ 안내 문구와 링크를 복사했어요. 붙여넣기만 하면 돼요."); else done("자동 복사가 막혀 있어요. 위 링크를 길게 눌러(또는 Ctrl+C) 복사해 주세요."); }
+    if (e.target.closest("[data-native]")) {
+      try { await navigator.share({ title: `${name}의 수영 리포트`, text: `${name}의 수영 성장 리포트예요.`, url }); done("✓ 보냈어요."); }
+      catch (err) { if (!err || err.name !== "AbortError") done("공유 창을 열지 못했어요. [링크 복사]를 눌러 주세요."); }
     }
-  }
-  copyText(url);
+  });
+  input.focus();
+}
+
+// 조용히 복사 (성공 여부만 알려 줌)
+async function copyQuiet(text, input) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const t = document.createElement("textarea");
+    t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    const ok = document.execCommand("copy"); t.remove();
+    if (ok) return true;
+  } catch {}
+  if (input) { input.focus(); input.select(); }
+  return false;
 }
 
 // 새 리포트 링크용 비밀 키
@@ -1197,7 +1226,6 @@ const PAGES = {
   login: { title: "물결 로그인", init() {
 
   addBackButton($("#backSlot"), "index.html");
-  if (QA) $("#qaEntry").hidden = true;
   guardConfig($("#form"));
   if (DEMO) { $("#email").value = "demo@mulgyeol.app"; $("#password").value = "demo1234"; }
   else sb.auth.getSession().then(({ data }) => { if (data.session) location.href = "?p=teacher"; });
@@ -1882,49 +1910,6 @@ const PAGES = {
   addBackButton($("#backSlot"), FROM_HOME ? "index.html" : "?p=teacher", !FROM_HOME); // 학부모가 링크로 바로 열면 버튼 없음
   guardConfig();
   load();
-
-  } },
-  qa: { title: "물결 출시 전 점검", init() {
-
-  const ITEMS = [
-    ["landing", "랜딩 페이지", "문구·버튼·휴대폰 화면 배치 확인", "index.html"],
-    ["signup", "강사 회원가입", "동의 체크·입력 확인 (점검 모드에선 실제 계정이 만들어지지 않아요)", "?p=signup"],
-    ["login", "로그인", "입력 후 대시보드로 이동하는지", "?p=login"],
-    ["dash", "대시보드 지표", "오늘 기록·체감도·입력 시간·MVP 성공 기준이 맞게 보이는지", "?p=teacher"],
-    ["classNew", "반 만들기 (눌러서 고르기)", "반 이름·요일·시간을 눌러 고르고 저장", "?p=teacher#manage"],
-    ["classEdit", "반 설정 수정·삭제", "반 카드의 [설정] → 바꾸고 저장, 삭제까지", "?p=teacher#manage"],
-    ["student", "회원 추가·삭제", "반·단계 고르고 추가, 이름 옆 ×로 삭제", "?p=teacher#manage"],
-    ["check", "드릴 체크 저장", "완료·진행·미실시 선택 → 저장 → 진행률 변화", "?p=check&class=c1"],
-    ["report", "학부모 리포트·설문", "진행률·전후 영상 자리·드릴·강사 한마디·설문 응답", "?p=report&t=demo-s4"],
-    ["back", "뒤로 가기", "어느 화면에서든 ← 뒤로가 바로 전 화면으로 가는지", "?p=teacher"],
-    ["mobile", "휴대폰 화면", "휴대폰으로 열거나 브라우저 폭을 줄여서 확인", "?p=teacher"],
-    ["dark", "다크 모드", "기기를 다크 모드로 바꿔서 글씨가 잘 보이는지", "index.html"],
-  ];
-  const KEY = "mg-qa-checked";
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
-  const save = (v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch {} };
-
-  function render() {
-    const done = load();
-    $("#list").innerHTML = ITEMS.map(([id, title, desc, href], i) => `
-      <label class="qa-item ${done[id] ? "done" : ""}">
-        <input type="checkbox" data-id="${id}" ${done[id] ? "checked" : ""} aria-label="${title} 확인함">
-        <span><b>${i + 1}. ${title}</b><br><span class="sub">${desc}</span></span>
-        <a class="btn small" href="${href}">열기</a>
-      </label>`).join("");
-    const n = ITEMS.filter(([id]) => done[id]).length;
-    $("#progress").textContent = `${n} / ${ITEMS.length} 확인`;
-  }
-
-  $("#list").addEventListener("change", (e) => {
-    const id = e.target.dataset.id; if (!id) return;
-    const v = load(); v[id] = e.target.checked; save(v); render();
-  });
-  $("#reset").addEventListener("click", () => { MulgyeolDemo.reset(); toast("예시 데이터를 처음 상태로 되돌렸어요."); });
-  $("#uncheck").addEventListener("click", () => { save({}); render(); });
-
-  guardConfig();
-  render();
 
   } },
   reset: { title: "물결 새 비밀번호", init() {

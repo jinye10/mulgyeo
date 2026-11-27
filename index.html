@@ -396,6 +396,59 @@ td .bar { width: 120px; }
 .lp-float.b { bottom: 2%; left: 2%; }
 .lp-float.b { top: 50%; bottom: auto; left: 0; }
 
+/* 눌러서 고르기 (반 설정) */
+[hidden] { display: none !important; }
+.field-group { display: grid; gap: 8px; }
+.field-label { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick button {
+  border: 1px solid var(--line); background: var(--glass-strong); color: var(--ink); border-radius: 11px;
+  padding: 8px 13px; font: 600 14px var(--sans); cursor: pointer; min-width: 44px; transition: background .15s, color .15s;
+}
+.pick button:hover { border-color: var(--accent); }
+.pick button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+#pickDays button { min-width: 42px; padding: 8px 0; }
+.preview { padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .pick button { transition: none; } }
+
+/* 점검 모드 */
+.qa-bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between;
+  background: var(--warn-soft); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 13.5px; }
+.qa-list { display: grid; gap: 10px; }
+.qa-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--glass-strong); }
+.qa-item input { width: 18px; height: 18px; accent-color: var(--accent); }
+.qa-item.done { opacity: .6; }
+.qa-item.done b { text-decoration: line-through; }
+#pickDays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+#pickDays button { min-width: 0; }
+.qa-item { color: var(--ink); font-size: 14.5px; font-weight: 400; }
+.qa-item b { font-size: 15px; }
+.qa-entry { display: grid; gap: 6px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.nav-qa { display: flex; align-items: center; gap: 8px; margin: 0 2px; padding: 9px 10px; border-radius: 11px; font-size: 13.5px; font-weight: 600;
+  color: var(--muted); text-decoration: none; border: 1px dashed var(--line); }
+.nav-qa:hover { color: var(--ink); border-color: var(--accent); }
+.nav-qa.on { background: var(--warn-soft); color: var(--ink); border-style: solid; }
+@media (max-width: 760px) { .nav-qa { white-space: nowrap; padding: 7px 9px; font-size: 13px; } }
+.level-select { padding: 6px 8px; font-size: 13px; border-radius: 9px; width: auto; min-width: 118px; }
+#pickAddMode button { padding: 5px 10px; font-size: 12.5px; }
+textarea { resize: vertical; font: 15px/1.6 var(--sans); }
+.check label { font-size: 13.5px; color: var(--ink); font-weight: 400; display: inline; }
+.check a { margin-left: auto; white-space: nowrap; }
+.doc { display: grid; gap: 12px; }
+.doc h2 { font: 700 20px/1.35 var(--display); margin-top: 6px; }
+.doc h3 { margin-top: 4px; }
+.doc p, .doc li { color: var(--ink); line-height: 1.75; }
+.doc ul, .doc ol { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.doc table { min-width: 0; font-size: 14px; }
+.fill { background: var(--warn-soft); padding: 0 4px; border-radius: 4px; }
+/* 회원 현황: 표는 한 줄 전체, 코멘트는 그 아래 */
+.grid-wide { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+#students table { min-width: 860px; }
+#students th, #students td.sub, #students td .btn { white-space: nowrap; }
+#students td .row { flex-wrap: nowrap; gap: 6px; }
+.guest-note { font-size: 12px; }
+
   </style>
 </head>
 <body>
@@ -410,6 +463,7 @@ td .bar { width: 120px; }
       <a href="#safety">안전</a>
     </div>
     <div class="right">
+      <a class="btn small ghost-login" href="app.html?p=teacher&guest=1" title="가입 없이 예시 데이터로 모든 기능 써 보기">게스트로 둘러보기</a>
       <a class="btn small ghost-login" href="app.html?p=login">강사 로그인</a>
       <a class="btn small primary" href="app.html?p=signup">무료로 시작하기</a>
     </div>
@@ -423,7 +477,7 @@ td .bar { width: 120px; }
       <p class="lead">수업이 끝나면 강사님은 드릴마다 탭 한 번. 물결이 지난달과 비교한 리포트를 만들고, 학부모님은 링크 하나로 아이가 얼마나 자랐는지 확인해요.</p>
       <div class="row wrap">
         <a class="btn primary" href="app.html?p=signup">강사로 무료 시작하기</a>
-        <a class="btn" href="app.html?p=teacher">대시보드 둘러보기</a>
+        <a class="btn" href="app.html?p=teacher&guest=1">대시보드 둘러보기</a>
       </div>
       <p class="note">학부모님은 가입 없이 강사님이 보낸 링크로 바로 확인해요.</p>
     </div>
@@ -504,7 +558,7 @@ td .bar { width: 120px; }
           <li>완료한 드릴과 연습 중인 드릴</li>
           <li>강사 한마디 코멘트</li>
         </ul>
-        <a class="btn small" style="justify-self:start" href="app.html?p=report&t=demo-s4&from=home">리포트 예시 보기</a>
+        <a class="btn small" style="justify-self:start" href="app.html?p=report&t=demo-s4&from=home&guest=1">리포트 예시 보기</a>
       </div>
       <div class="panel">
         <span class="chip done" style="justify-self:start">강사 웹 대시보드</span>
@@ -519,7 +573,7 @@ td .bar { width: 120px; }
           <li>회원별 진행률, 리포트 링크 복사</li>
           <li>학부모 설문으로 체감도 확인</li>
         </ul>
-        <a class="btn small" style="justify-self:start" href="app.html?p=teacher">대시보드 둘러보기</a>
+        <a class="btn small" style="justify-self:start" href="app.html?p=teacher&guest=1">대시보드 둘러보기</a>
       </div>
     </div>
     <div class="lp-for">
@@ -549,7 +603,7 @@ td .bar { width: 120px; }
     <p>가입은 강사만, 1분이면 돼요. 반과 회원을 등록하면 오늘 수업부터 바로 기록할 수 있어요.</p>
     <div class="row wrap" style="justify-content:center">
       <a class="btn primary" href="app.html?p=signup">강사로 무료 시작하기</a>
-      <a class="btn" href="app.html?p=teacher">먼저 둘러보기</a>
+      <a class="btn" href="app.html?p=teacher&guest=1">먼저 둘러보기</a>
     </div>
   </section>
 
