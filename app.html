@@ -479,6 +479,100 @@ body.embed .topbar, body.embed #termsIntro, body.embed #ok, body.embed #termsFoo
 body.embed main { padding-top: 12px; }
 body.embed::before { display: none; }
 
+/* =========================================================
+   반응형: PC(넓은 메뉴) · 태블릿(아이콘 메뉴) · 휴대폰(아래 탭)
+   ========================================================= */
+.nav a .short { display: none; }
+.actions { display: grid; gap: 8px; }
+
+/* 태블릿 761~1080px: 왼쪽 메뉴를 아이콘 줄로 */
+@media (min-width: 761px) and (max-width: 1080px) {
+  .shell { grid-template-columns: 92px minmax(0, 1fr); }
+  .side { padding: 20px 8px; align-items: stretch; gap: 18px; }
+  .side .brand { padding: 0; text-align: center; }
+  .side .brand b { font-size: 20px; }
+  .side .brand span, .side .wave-deco, .side .guest-note { display: none; }
+  .nav a { flex-direction: column; gap: 4px; padding: 10px 4px; font-size: 11.5px; text-align: center; }
+  .nav a .lbl { display: none; }
+  .nav a .short { display: block; }
+  .nav a svg { width: 20px; height: 20px; }
+  .side .me { padding: 10px 6px; text-align: center; font-size: 12px; gap: 4px; }
+  .side .me > div .sub { display: none; }
+  .main { padding-left: 22px; }
+}
+
+/* 휴대폰 ~760px: 위 머리띠 + 아래 고정 탭 */
+@media (max-width: 760px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side {
+    position: sticky; top: env(safe-area-inset-top, 0px); height: auto; z-index: 20; flex-direction: row; align-items: center; gap: 10px;
+    padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    border-right: 0; border-bottom: 1px solid var(--line); overflow: visible;
+  }
+  .side .brand span, .side .wave-deco, .side .guest-note, .side .me > div .sub { display: none; }
+  .side .me { margin: 0 0 0 auto; padding: 0; border: 0; background: none; box-shadow: none; display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
+    padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    background: var(--glass-strong); border-top: 1px solid var(--line);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  }
+  .nav a { flex-direction: column; gap: 3px; padding: 6px 2px; font-size: 11.5px; border-radius: 10px; white-space: nowrap; }
+  .nav a svg { display: block; width: 22px; height: 22px; }
+  .nav a .lbl { display: none; }
+  .nav a .short { display: block; }
+  .nav a.on { box-shadow: none; background: var(--accent-soft); }
+  .main { padding-top: 16px; padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); gap: 16px; }
+  .panel-wave { padding: 18px; }
+  .page-head h1 { font-size: 22px; }
+  .page-head > #backSlot:first-child { flex-basis: 100%; }
+  .kpi .value { font-size: 24px; }
+  .features { grid-template-columns: minmax(0, 1fr); }
+
+  /* 회원 현황: 표 → 카드 */
+  #students .table-wrap { overflow: visible; margin: 0; }
+  #students table, #students tbody { display: block; min-width: 0; }
+  #students thead { display: none; }
+  #students tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center;
+    padding: 14px; margin-bottom: 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass-strong);
+  }
+  #students td { display: block; padding: 0; border: 0; }
+  #students td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+  #students .c-name { grid-column: 1; font-size: 16px; }
+  #students .c-class { grid-column: 2; grid-row: 1; text-align: right; }
+  #students .c-level { grid-column: 1; }
+  #students .c-last { grid-column: 2; text-align: right; }
+  #students .c-prog { grid-column: 1 / -1; }
+  #students .c-prog .bar { flex: 1; width: auto; }
+  #students .c-actions { grid-column: 1 / -1; }
+  #students .c-actions .row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; }
+  #students .level-select { width: 100%; }
+
+  /* 드릴 체크: 저장 버튼을 화면 아래에 붙여 엄지로 바로 */
+  .roster { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .roster button { flex: none; }
+  .actions {
+    position: sticky; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+    margin: 4px -18px -18px; padding: 12px 18px 18px; border-radius: 0 0 var(--radius) var(--radius);
+    background: linear-gradient(to bottom, transparent, var(--glass-strong) 30%);
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  }
+
+  /* 보내기·약관 창이 아래 탭보다 위에 */
+  .sheet-wrap { z-index: 70; }
+}
+@media (max-width: 380px) {
+  .tri button { min-width: 40px; padding: 7px 6px; font-size: 12.5px; }
+  #students .c-actions .row { grid-template-columns: 1fr 1fr 1fr; }
+}
+@media (max-width: 760px) {
+  /* 흐림 효과가 있으면 아래 탭(고정 위치)이 머리띠 안에 갇혀서 꺼 둠 */
+  .side { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--glass-strong); }
+}
+@media (max-width: 760px) { .side .me #logout { display: inline; font-size: 12.5px; } }
+
   </style>
 </head>
 <body>
@@ -1084,15 +1178,15 @@ const ICON = {
 
 function renderSide(active, teacherName) {
   const items = [
-    ["home", "?p=teacher", "대시보드", ICON.home],
-    ["record", "?p=teacher#today", "오늘 수업 기록", ICON.wave],
-    ["students", "?p=teacher#students", "회원 현황", ICON.users],
-    ["manage", "?p=teacher#manage", "반·회원 관리", ICON.gear],
+    ["home", "?p=teacher", "대시보드", ICON.home, "홈"],
+    ["record", "?p=teacher#today", "오늘 수업 기록", ICON.wave, "기록"],
+    ["students", "?p=teacher#students", "회원 현황", ICON.users, "회원"],
+    ["manage", "?p=teacher#manage", "반·회원 관리", ICON.gear, "관리"],
   ];
   $("#side").innerHTML = `
     <a class="brand" href="index.html" title="물결 소개 페이지로"><b>물결</b><span>수영 성장 기록 리포트</span></a>
     <nav class="nav" aria-label="메뉴">
-      ${items.map(([k, href, label, icon]) => `<a href="${href}" class="${k === active ? "on" : ""}">${icon}${label}</a>`).join("")}
+      ${items.map(([k, href, label, icon, short]) => `<a href="${href}" class="${k === active ? "on" : ""}" aria-label="${label}">${icon}<span class="lbl">${label}</span><span class="short" aria-hidden="true">${short}</span></a>`).join("")}
     </nav>
     <div class="wave-deco wave-lines" aria-hidden="true"></div>
     <div class="me">
@@ -1418,12 +1512,12 @@ const PAGES = {
         <thead><tr><th>회원</th><th>반</th><th>단계</th><th>진행률</th><th>최근 기록</th><th>리포트</th></tr></thead>
         <tbody>${sorted.map((s) => `
           <tr>
-            <td><b>${esc(s.name)}</b> <span class="sub">${s.age ? s.age + "세" : ""}</span></td>
-            <td class="sub">${esc(s.cls.name)}</td>
-            <td><select class="level-select" data-level-for="${s.id}" data-name="${esc(s.name)}" aria-label="${esc(s.name)} 단계 바꾸기">${levels.map((l) => `<option ${l === s.level ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></td>
-            <td><div class="row" style="gap:10px"><div class="bar"><i style="width:${s.progress}%"></i></div><span class="num">${s.progress}%</span></div></td>
-            <td class="sub num">${s.last ? (s.last === TODAY ? "오늘" : md(s.last)) : "–"}</td>
-            <td><div class="row"><button class="btn small primary" data-share="${s.report_token}" data-name="${esc(s.name)}">보내기</button><a class="btn small" href="?p=report&t=${s.report_token}">보기</a><button class="btn small" data-relink="${s.id}" data-name="${esc(s.name)}" title="예전 링크를 막고 새 링크를 만들어요">새 링크</button></div></td>
+            <td class="c-name"><b>${esc(s.name)}</b> <span class="sub">${s.age ? s.age + "세" : ""}</span></td>
+            <td class="sub c-class" data-label="반">${esc(s.cls.name)}</td>
+            <td class="c-level" data-label="단계"><select class="level-select" data-level-for="${s.id}" data-name="${esc(s.name)}" aria-label="${esc(s.name)} 단계 바꾸기">${levels.map((l) => `<option ${l === s.level ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></td>
+            <td class="c-prog" data-label="진행률"><div class="row" style="gap:10px"><div class="bar"><i style="width:${s.progress}%"></i></div><span class="num">${s.progress}%</span></div></td>
+            <td class="sub num c-last" data-label="최근 기록">${s.last ? (s.last === TODAY ? "오늘" : md(s.last)) : "–"}</td>
+            <td class="c-actions"><div class="row"><button class="btn small primary" data-share="${s.report_token}" data-name="${esc(s.name)}">보내기</button><a class="btn small" href="?p=report&t=${s.report_token}">보기</a><button class="btn small" data-relink="${s.id}" data-name="${esc(s.name)}" title="예전 링크를 막고 새 링크를 만들어요">새 링크</button></div></td>
           </tr>`).join("")}</tbody>
       </table>` : `<p class="sub">회원이 없어요.</p>`;
 
@@ -1773,8 +1867,10 @@ const PAGES = {
         <label>한 줄 코멘트 (선택)<input id="comment" maxlength="120" value="${esc(sess.comment || "")}" placeholder="예: 호흡할 때 고개가 많이 들려요"></label>
         <label>영상 추가 (선택 · 10~20초 · 50MB 이하)<input id="video" type="file" accept="video/*"></label>
         ${sess.video_path ? `<p class="sub">오늘 올린 영상이 있어요. 새로 고르면 바뀌어요.</p>` : ""}
-        <button class="btn primary block" id="save">${idx < students.length - 1 ? "저장하고 다음 회원 →" : "저장하고 마치기"}</button>
-        <button class="btn block" id="skip" type="button">건너뛰기</button>
+        <div class="actions">
+          <button class="btn primary block" id="save">${idx < students.length - 1 ? "저장하고 다음 회원 →" : "저장하고 마치기"}</button>
+          <button class="btn block" id="skip" type="button">건너뛰기</button>
+        </div>
       </div>`;
   }
 
