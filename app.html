@@ -435,6 +435,29 @@ td .bar { width: 120px; }
 #pickDays button { min-width: 0; }
 .qa-item { color: var(--ink); font-size: 14.5px; font-weight: 400; }
 .qa-item b { font-size: 15px; }
+.qa-entry { display: grid; gap: 6px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.nav-qa { display: flex; align-items: center; gap: 8px; margin: 0 2px; padding: 9px 10px; border-radius: 11px; font-size: 13.5px; font-weight: 600;
+  color: var(--muted); text-decoration: none; border: 1px dashed var(--line); }
+.nav-qa:hover { color: var(--ink); border-color: var(--accent); }
+.nav-qa.on { background: var(--warn-soft); color: var(--ink); border-style: solid; }
+@media (max-width: 760px) { .nav-qa { white-space: nowrap; padding: 7px 9px; font-size: 13px; } }
+.level-select { padding: 6px 8px; font-size: 13px; border-radius: 9px; width: auto; min-width: 118px; }
+#pickAddMode button { padding: 5px 10px; font-size: 12.5px; }
+textarea { resize: vertical; font: 15px/1.6 var(--sans); }
+.check label { font-size: 13.5px; color: var(--ink); font-weight: 400; display: inline; }
+.check a { margin-left: auto; white-space: nowrap; }
+.doc { display: grid; gap: 12px; }
+.doc h2 { font: 700 20px/1.35 var(--display); margin-top: 6px; }
+.doc h3 { margin-top: 4px; }
+.doc p, .doc li { color: var(--ink); line-height: 1.75; }
+.doc ul, .doc ol { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.doc table { min-width: 0; font-size: 14px; }
+.fill { background: var(--warn-soft); padding: 0 4px; border-radius: 4px; }
+/* 회원 현황: 표는 한 줄 전체, 코멘트는 그 아래 */
+.grid-wide { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+#students table { min-width: 860px; }
+#students th, #students td.sub, #students td .btn { white-space: nowrap; }
+#students td .row { flex-wrap: nowrap; gap: 6px; }
 
   </style>
 </head>
@@ -459,9 +482,9 @@ td .bar { width: 120px; }
 
     <div class="list" style="gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px">
       <label class="check"><input type="checkbox" id="agreeAll"> <b>전체 동의</b></label>
-      <label class="check"><input type="checkbox" class="agree" required> (필수) 서비스 이용약관</label>
-      <label class="check"><input type="checkbox" class="agree" required> (필수) 개인정보 수집·이용</label>
-      <label class="check"><input type="checkbox" class="agree" required> (필수) 회원(아동) 영상은 보호자 동의를 받은 경우에만 올립니다</label>
+      <div class="check"><input type="checkbox" class="agree" id="ag1" required> <label for="ag1">(필수) 서비스 이용약관</label> <a class="sub" href="?p=terms#terms" target="_blank" rel="noopener">보기</a></div>
+      <div class="check"><input type="checkbox" class="agree" id="ag2" required> <label for="ag2">(필수) 개인정보 수집·이용</label> <a class="sub" href="?p=terms#privacy" target="_blank" rel="noopener">보기</a></div>
+      <div class="check"><input type="checkbox" class="agree" id="ag3" required> <label for="ag3">(필수) 회원(아동) 영상은 보호자 동의를 받은 경우에만 올립니다</label> <a class="sub" href="?p=terms#video" target="_blank" rel="noopener">보기</a></div>
     </div>
 
     <button class="btn primary block" id="submit">가입하기</button>
@@ -481,7 +504,18 @@ td .bar { width: 120px; }
     <label>비밀번호<input id="password" type="password" required autocomplete="current-password"></label>
     <button class="btn primary block" id="submit">로그인</button>
     <p id="msg" class="sub" role="status"></p>
+    <button type="button" class="linkish sub" id="forgot" style="justify-self:start;border:0;background:none;padding:0;cursor:pointer;text-decoration:underline">비밀번호를 잊으셨나요?</button>
+    <div class="qa-entry" id="resetBox" hidden>
+      <b>비밀번호 재설정</b>
+      <span class="sub">가입한 이메일로 재설정 링크를 보내 드려요. 메일의 링크를 누르면 새 비밀번호를 정할 수 있어요.</span>
+      <button type="button" class="btn block" id="sendReset">재설정 메일 보내기</button>
+      <p id="resetMsg" class="sub" role="status"></p>
+    </div>
     <p class="sub">처음이신가요? <a href="?p=signup">강사 회원가입</a> · 로그인 상태는 이 기기에 유지돼요.</p>
+    <div class="qa-entry" id="qaEntry">
+      <a class="btn block" href="?p=qa">🔧 로그인 없이 점검 모드로 둘러보기</a>
+      <span class="sub">예시 데이터로 모든 기능을 확인해요. 실제 데이터에는 저장되지 않아요.</span>
+    </div>
   </form>
 </main>
 </template>
@@ -509,9 +543,9 @@ td .bar { width: 120px; }
       <div class="panel" id="criteria"></div>
     </section>
 
-    <section class="grid-2">
+    <section class="grid-wide">
       <div class="panel" id="students">
-        <div class="panel-head"><h2>회원 현황</h2><span class="sub">진행률 = 현재 단계 드릴 중 완료한 비율</span></div>
+        <div class="panel-head"><h2>회원 현황</h2><span class="sub">진행률 = 현재 단계 드릴 중 완료한 비율 · 단계를 눌러 승급할 수 있어요</span></div>
         <div class="table-wrap" id="studentTable"></div>
       </div>
       <div class="panel">
@@ -549,14 +583,22 @@ td .bar { width: 120px; }
             </div>
           </form>
           <form id="studentForm" class="panel" style="box-shadow:none">
-            <h3>회원 추가</h3>
+            <div class="row between"><h3>회원 추가</h3>
+              <div class="pick" id="pickAddMode" role="group" aria-label="추가 방식">
+                <button type="button" data-mode="one" class="on" aria-pressed="true">한 명</button>
+                <button type="button" data-mode="many" aria-pressed="false">여러 명</button>
+              </div></div>
             <label>반<select id="sClass" required></select></label>
-            <div class="row">
-              <label style="flex:1">이름<input id="sName" required placeholder="김하늘"></label>
+            <div class="row" id="oneFields">
+              <label style="flex:1">이름<input id="sName" placeholder="김하늘"></label>
               <label style="width:90px">나이<input id="sAge" type="number" min="3" max="19" placeholder="9"></label>
             </div>
+            <label id="manyFields" hidden>회원 목록 (한 줄에 한 명 · 엑셀에서 이름·나이 두 칸을 복사해 붙여넣어도 돼요)
+              <textarea id="sBulk" rows="6" placeholder="김하늘 9&#10;정바다, 10&#10;윤시우"></textarea>
+              <span class="sub" id="bulkCount"></span>
+            </label>
             <label>단계<select id="sLevel" required></select></label>
-            <button class="btn primary">회원 추가</button>
+            <button class="btn primary" id="sSubmit">회원 추가</button>
           </form>
         </div>
       </div>
@@ -613,6 +655,103 @@ td .bar { width: 120px; }
   <section class="qa-list" id="list"></section>
 </main>
 </template>
+<template id="page-reset">
+<!-- 비밀번호 재설정: 메일의 링크를 누르면 이 화면으로 와요 -->
+<main class="auth">
+  <form id="form" class="panel">
+    <a class="brand" href="index.html" style="padding:0"><b>물결</b><span>수영 성장 기록 리포트</span></a>
+    <h1 style="font-size:22px">새 비밀번호 정하기</h1>
+    <p class="sub" id="state">확인 중...</p>
+    <label>새 비밀번호 (6자 이상)<input id="pw1" type="password" minlength="6" required autocomplete="new-password"></label>
+    <label>한 번 더 입력<input id="pw2" type="password" minlength="6" required autocomplete="new-password"></label>
+    <button class="btn primary block" id="submit" disabled>비밀번호 바꾸기</button>
+    <p id="msg" class="sub" role="status"></p>
+    <a class="sub" href="?p=login">로그인 화면으로</a>
+  </form>
+</main>
+</template>
+<template id="page-terms">
+<!-- 이용약관 · 개인정보 처리방침 · 아동 영상 안내 (시범 운영용) -->
+<main class="solo wide" style="max-width:780px">
+  <div class="topbar">
+    <div class="row" id="backSlot"><a class="brand" href="index.html"><b>물결</b></a></div>
+    <nav class="row wrap" style="gap:12px;font-size:13.5px"><a href="#terms">이용약관</a><a href="#privacy">개인정보 처리방침</a><a href="#video">아동 영상 안내</a></nav>
+  </div>
+
+  <div class="panel doc">
+    <span class="eyebrow">시범 운영 기간 적용 · 시행일 <span class="fill">[2027년 1월 ○일]</span></span>
+    <p class="sub">물결은 2027년 1~2월 수영학원 시범 운영을 위한 서비스예요. 아래 내용은 시범 운영 기간에 적용되며, 정식 서비스 전에 다시 안내해 드려요.</p>
+  </div>
+
+  <!-- 이용약관 -->
+  <section class="panel doc" id="terms">
+    <h2>이용약관</h2>
+    <h3>1. 서비스 내용</h3>
+    <p>물결은 수영 강사가 수업마다 드릴 단위 기록·코멘트·영상을 남기면, 이를 정리한 성장 리포트를 학부모가 링크로 확인할 수 있게 하는 서비스예요.</p>
+    <h3>2. 이용 대상</h3>
+    <ul>
+      <li>강사: 이메일로 가입해 반·회원·수업 기록을 관리해요.</li>
+      <li>학부모: 가입 없이 강사가 보낸 아이별 리포트 링크로 확인해요.</li>
+    </ul>
+    <h3>3. 강사의 책임</h3>
+    <ul>
+      <li>회원(아동)의 정보와 영상은 보호자의 동의를 받은 경우에만 등록해요.</li>
+      <li>리포트 링크는 해당 아이의 보호자에게만 보내요. 잘못 보냈다면 대시보드의 <b>새 링크</b>로 예전 링크를 막아요.</li>
+      <li>계정 비밀번호를 다른 사람과 공유하지 않아요.</li>
+    </ul>
+    <h3>4. 서비스 변경·중단</h3>
+    <p>시범 운영 중에는 기능이 바뀌거나 점검으로 잠시 멈출 수 있어요. 중요한 변경은 미리 알려 드려요.</p>
+    <h3>5. 비용</h3>
+    <p>시범 운영 기간에는 무료예요.</p>
+  </section>
+
+  <!-- 개인정보 처리방침 -->
+  <section class="panel doc" id="privacy">
+    <h2>개인정보 처리방침</h2>
+    <h3>1. 수집하는 정보와 목적</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>누구</th><th>수집 항목</th><th>목적</th></tr></thead>
+      <tbody>
+        <tr><td>강사</td><td>이름, 이메일, 비밀번호(암호화 저장)</td><td>가입·로그인, 계정 관리</td></tr>
+        <tr><td>회원(아동)</td><td>이름, 나이, 수영 단계, 드릴 기록, 강사 코멘트, 수업 영상(선택)</td><td>성장 리포트 작성·제공</td></tr>
+        <tr><td>학부모</td><td>리포트 설문 응답(네·비슷해요·아니요)</td><td>서비스 효과 확인(시범 운영 평가)</td></tr>
+        <tr><td>공통</td><td>기록 입력에 걸린 시간, 피드백 전화 시간(강사가 직접 입력)</td><td>강사 업무 부담 측정</td></tr>
+      </tbody>
+    </table></div>
+    <h3>2. 보관 기간</h3>
+    <p>시범 운영이 끝난 뒤 <span class="fill">[30일]</span> 이내에 지워요. 강사가 회원이나 반을 삭제하면 관련 기록도 함께 지워져요.</p>
+    <h3>3. 처리를 맡기는 곳</h3>
+    <ul>
+      <li>Supabase: 데이터·영상 저장, 로그인 처리 (서버 지역: <span class="fill">[Supabase 프로젝트 지역]</span>)</li>
+      <li>Vercel: 웹사이트 제공</li>
+    </ul>
+    <h3>4. 만 14세 미만 아동</h3>
+    <p>아동의 정보는 법정대리인(보호자)의 동의를 받은 강사·학원이 등록해요. 보호자는 언제든 열람·정정·삭제를 요청할 수 있어요.</p>
+    <h3>5. 정보 보호</h3>
+    <ul>
+      <li>강사는 자기 반 회원의 정보만 볼 수 있어요.</li>
+      <li>리포트는 아이마다 따로 만든 추측하기 어려운 링크로만 열려요.</li>
+      <li>비밀번호는 암호화되어 저장되고, 운영자도 볼 수 없어요.</li>
+    </ul>
+    <h3>6. 문의·요청</h3>
+    <p>열람·정정·삭제 요청과 문의는 <span class="fill">[문의 이메일]</span> 로 보내 주세요. 담당 강사를 통해서도 요청할 수 있어요.</p>
+  </section>
+
+  <!-- 아동 영상 안내 -->
+  <section class="panel doc" id="video">
+    <h2>아동 영상 안내</h2>
+    <ul>
+      <li>영상은 <b>보호자에게 동의를 받은 경우에만</b> 올려요.</li>
+      <li>10~20초 정도의 짧은 연습 장면만 올리고, 얼굴이 크게 나오지 않게 찍는 걸 권장해요.</li>
+      <li>영상은 해당 아이의 리포트 링크를 가진 사람만 볼 수 있어요.</li>
+      <li>보호자가 원하면 영상을 지워 드려요. 담당 강사나 위 문의처로 요청해 주세요.</li>
+      <li>AI 영상 분석 등 다른 용도로 쓰려면 보호자에게 따로 동의를 받아요.</li>
+    </ul>
+  </section>
+
+  <p class="sub" style="text-align:center;padding-bottom:12px">물결 · 수영 성장 기록 리포트</p>
+</main>
+</template>
 
 <script>
 // ---------- 체험 모드 예시 데이터 ----------
@@ -621,7 +760,7 @@ td .bar { width: 120px; }
 // (브라우저 탭을 닫으면 예시 데이터는 처음 상태로 돌아갑니다)
 // =========================================================
 window.MulgyeolDemo = (function () {
-  const KEY = "mg-demo-db-v2";
+  const KEY = "mg-demo-db-v3";
   const pad = (n) => String(n).padStart(2, "0");
   const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -650,7 +789,7 @@ window.MulgyeolDemo = (function () {
     const T = ymd(today);
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastMonth = addDays(monthStart, -18);
-    const db = { teachers: [], drills: [], classes: [], students: [], sessions: [], records: [], surveys: [] };
+    const db = { teachers: [], drills: [], classes: [], students: [], sessions: [], records: [], surveys: [], call_logs: [] };
     const me = "demo-teacher";
     db.teachers.push({ id: me, name: "김물결" });
     let id = 1;
@@ -699,7 +838,11 @@ window.MulgyeolDemo = (function () {
       }
     });
     ["yes", "yes", "yes", "same", "yes", "yes", "no", "yes", "yes", "same", "yes", "yes"].forEach((answer, i) =>
-      db.surveys.push({ id: i + 1, student_id: "s" + ((i % 9) + 1), answer, created_at: ymd(addDays(today, -i)) }));
+      db.surveys.push({ id: i + 1, student_id: "s" + ((i % 9) + 1), answer, month: ymd(today).slice(0, 7), created_at: ymd(addDays(today, -i)) }));
+    // 피드백 전화 시간 (하루 평균 분): 첫 주가 기준
+    const mon = (d) => { const x = new Date(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return ymd(x); };
+    [[-28, 50], [-21, 45], [-14, 30], [-7, 25]].forEach(([off, m], i) =>
+      db.call_logs.push({ id: i + 1, teacher_id: me, week_start: mon(addDays(today, off)), minutes_per_day: m }));
     return db;
   }
 
@@ -802,7 +945,13 @@ window.MulgyeolDemo = (function () {
         }
         if (name === "submit_survey") {
           const s = DB.students.find((x) => x.report_token === args.p_token);
-          if (s) { DB.surveys.push({ id: uid(), student_id: s.id, answer: args.p_answer, created_at: new Date().toISOString() }); save(DB); }
+          if (s) {
+            const month = ymd(new Date()).slice(0, 7);
+            const hit = DB.surveys.find((x) => x.student_id === s.id && x.month === month);
+            if (hit) Object.assign(hit, { answer: args.p_answer, created_at: new Date().toISOString() });
+            else DB.surveys.push({ id: uid(), student_id: s.id, answer: args.p_answer, month, created_at: new Date().toISOString() });
+            save(DB);
+          }
           return Promise.resolve({ data: null, error: null });
         }
         return Promise.resolve({ data: null, error: { message: "unknown rpc" } });
@@ -812,6 +961,9 @@ window.MulgyeolDemo = (function () {
         signInWithPassword: () => { setOut(false); return Promise.resolve({ data: { session: session() }, error: null }); },
         signUp: () => { setOut(false); return Promise.resolve({ data: { session: session() }, error: null }); },
         signOut: () => { setOut(true); return Promise.resolve({ error: null }); },
+        resetPasswordForEmail: () => Promise.resolve({ data: {}, error: null }),
+        updateUser: () => Promise.resolve({ data: {}, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
       },
       storage: { from: () => ({ upload: () => Promise.resolve({ data: null, error: null }) }) },
     };
@@ -884,12 +1036,16 @@ function reportLink(token) {
 }
 
 async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast("링크를 복사했어요. 카카오톡에 붙여넣어 보내세요.");
-  } catch {
-    toast("복사하지 못했어요. 리포트 보기에서 주소를 복사해 주세요.");
-  }
+  const done = () => toast("링크를 복사했어요. 카카오톡에 붙여넣어 보내세요.");
+  try { await navigator.clipboard.writeText(text); return done(); } catch {}
+  try { // 예전 방식 복사
+    const t = document.createElement("textarea");
+    t.value = text; t.setAttribute("readonly", ""); t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.appendChild(t); t.select();
+    const ok = document.execCommand("copy"); t.remove();
+    if (ok) return done();
+  } catch {}
+  window.prompt("아래 링크를 길게 눌러(또는 Ctrl+C) 복사해 주세요", text);
 }
 
 // 체험·점검 모드 안내
@@ -942,6 +1098,7 @@ function renderSide(active, teacherName) {
     <nav class="nav" aria-label="메뉴">
       ${items.map(([k, href, label, icon]) => `<a href="${href}" class="${k === active ? "on" : ""}">${icon}${label}</a>`).join("")}
     </nav>
+    <a class="nav-qa ${QA ? "on" : ""}" href="${QA ? "?p=login&qa=0" : "?p=qa"}">${QA ? "🔧 점검 끝내기" : "🔧 점검 모드"}</a>
     <div class="wave-deco wave-lines" aria-hidden="true"></div>
     <div class="me">
       <div><b>${esc(teacherName || "")}</b> <span class="sub">강사</span></div>
@@ -985,6 +1142,29 @@ function addBackButton(slot, fallback, onlyIfHistory) {
   slot.prepend(b);
 }
 
+// ---------- 리포트 보내기 (휴대폰: 카카오톡 등 공유 창 / PC: 링크 복사) ----------
+async function shareReport(token, name) {
+  const url = reportLink(token);
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: `${name}의 수영 리포트`, text: `${name}의 수영 성장 리포트예요. 아래 링크로 확인해 주세요.`, url });
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return; // 공유 창을 닫음
+    }
+  }
+  copyText(url);
+}
+
+// 새 리포트 링크용 비밀 키
+function newToken() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  const h = [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 </script>
 <script>
 // ---------- 화면별 동작 ----------
@@ -1017,9 +1197,22 @@ const PAGES = {
   login: { title: "물결 로그인", init() {
 
   addBackButton($("#backSlot"), "index.html");
+  if (QA) $("#qaEntry").hidden = true;
   guardConfig($("#form"));
   if (DEMO) { $("#email").value = "demo@mulgyeol.app"; $("#password").value = "demo1234"; }
   else sb.auth.getSession().then(({ data }) => { if (data.session) location.href = "?p=teacher"; });
+
+  $("#forgot").addEventListener("click", () => { $("#resetBox").hidden = !$("#resetBox").hidden; if (!$("#resetBox").hidden) $("#email").focus(); });
+  $("#sendReset").addEventListener("click", async () => {
+    const email = $("#email").value.trim();
+    if (!email || !$("#email").checkValidity()) { $("#resetMsg").textContent = "위 이메일 칸에 가입한 이메일을 먼저 입력해 주세요."; $("#email").focus(); return; }
+    $("#sendReset").disabled = true;
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: new URL("?p=reset", location.href).href });
+    $("#sendReset").disabled = false;
+    $("#resetMsg").textContent = error
+      ? "메일을 보내지 못했어요: " + error.message
+      : `${email} 로 재설정 메일을 보냈어요. 메일함(스팸함 포함)을 확인해 주세요.`;
+  });
 
   $("#form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1040,13 +1233,14 @@ const PAGES = {
 
   async function load() {
     const user = await requireTeacher();
-    const [me, cls, drl, rec, ses, srv] = await Promise.all([
+    const [me, cls, drl, rec, ses, srv, calls] = await Promise.all([
       sb.from("teachers").select("name").eq("id", user.id).maybeSingle(),
       sb.from("classes").select("id,name,schedule,created_at,students(id,name,age,level,report_token)").order("created_at"),
       sb.from("drills").select("id,level,level_order,sort").order("level_order"),
       sb.from("records").select("student_id,drill_id,lesson_date,status").order("lesson_date"),
       sb.from("sessions").select("student_id,lesson_date,comment,input_seconds").order("lesson_date"),
       sb.from("surveys").select("answer,created_at"),
+      sb.from("call_logs").select("week_start,minutes_per_day").order("week_start"),
     ]);
     if (cls.error) { $("#classes").innerHTML = `<p class="sub">불러오지 못했어요: ${esc(cls.error.message)}</p>`; return; }
 
@@ -1131,7 +1325,8 @@ const PAGES = {
       <div class="list" style="border-top:1px solid var(--line);padding-top:12px">
         <div class="row between"><b>강사 입력 시간</b><b class="num">${avgSec ?? "–"}초</b></div>
         <p class="sub">${secs.length ? `가장 빠름 ${Math.min(...secs)}초 · 가장 느림 ${Math.max(...secs)}초. 시범 데이터로 적정 기준을 정해요.` : "기록이 쌓이면 표시돼요."}</p>
-      </div>`;
+      </div>
+      ${callBlock(calls.error ? null : calls.data || [], user.id)}`;
 
     // ---------- 회원 현황 ----------
     const sorted = [...students].sort((a, b) => a.cls.created_at.localeCompare(b.cls.created_at) || a.name.localeCompare(b.name, "ko"));
@@ -1142,10 +1337,10 @@ const PAGES = {
           <tr>
             <td><b>${esc(s.name)}</b> <span class="sub">${s.age ? s.age + "세" : ""}</span></td>
             <td class="sub">${esc(s.cls.name)}</td>
-            <td>${esc(s.level)}</td>
+            <td><select class="level-select" data-level-for="${s.id}" data-name="${esc(s.name)}" aria-label="${esc(s.name)} 단계 바꾸기">${levels.map((l) => `<option ${l === s.level ? "selected" : ""}>${esc(l)}</option>`).join("")}</select></td>
             <td><div class="row" style="gap:10px"><div class="bar"><i style="width:${s.progress}%"></i></div><span class="num">${s.progress}%</span></div></td>
             <td class="sub num">${s.last ? (s.last === TODAY ? "오늘" : md(s.last)) : "–"}</td>
-            <td><div class="row"><button class="btn small" data-copy="${s.report_token}">링크 복사</button><a class="btn small" href="?p=report&t=${s.report_token}">보기</a></div></td>
+            <td><div class="row"><button class="btn small primary" data-share="${s.report_token}" data-name="${esc(s.name)}">보내기</button><a class="btn small" href="?p=report&t=${s.report_token}">보기</a><button class="btn small" data-relink="${s.id}" data-name="${esc(s.name)}" title="예전 링크를 막고 새 링크를 만들어요">새 링크</button></div></td>
           </tr>`).join("")}</tbody>
       </table>` : `<p class="sub">회원이 없어요.</p>`;
 
@@ -1178,6 +1373,24 @@ const PAGES = {
   document.addEventListener("click", async (e) => {
     const copy = e.target.closest("[data-copy]");
     if (copy) return copyText(reportLink(copy.dataset.copy));
+    const share = e.target.closest("[data-share]");
+    if (share) return shareReport(share.dataset.share, share.dataset.name);
+    const relink = e.target.closest("[data-relink]");
+    if (relink) {
+      if (relink.dataset.confirm !== "1") {
+        relink.dataset.confirm = "1"; relink.textContent = "예전 링크가 막혀요. 만들까요?";
+        setTimeout(() => { if (relink.dataset.confirm === "1") { relink.dataset.confirm = ""; relink.textContent = "새 링크"; } }, 4000);
+        return;
+      }
+      const token = newToken();
+      const { error } = await sb.from("students").update({ report_token: token }).eq("id", relink.dataset.relink);
+      if (error) return toast("새 링크를 만들지 못했어요: " + error.message);
+      toast(`${relink.dataset.name} 리포트 새 링크를 만들었어요. 예전 링크는 이제 열리지 않아요.`);
+      await load();
+      return shareReport(token, relink.dataset.name);
+    }
+    const callBtn = e.target.closest("[data-call]");
+    if (callBtn) return saveCall(Number(callBtn.dataset.call));
     const editBtn = e.target.closest("[data-edit-class]");
     if (editBtn) return editClass(editBtn.dataset.editClass);
     const del = e.target.closest("[data-del-student]");
@@ -1195,17 +1408,91 @@ const PAGES = {
     }
   });
 
+  // ---------- 회원 추가: 한 명 / 여러 명 ----------
+  let ADD_MODE = "one";
+  function parseBulk(text) {
+    return text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+      const m = l.match(/^(.+?)[\s,\t]+(\d{1,2})\s*(세)?$/);
+      return m ? { name: m[1].replace(/[,\t]+$/, "").trim(), age: Number(m[2]) } : { name: l.replace(/[,\t]+$/, "").trim(), age: null };
+    }).filter((x) => x.name);
+  }
+  $("#pickAddMode").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-mode]"); if (!b) return;
+    ADD_MODE = b.dataset.mode;
+    document.querySelectorAll("#pickAddMode button").forEach((x) => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b); });
+    $("#oneFields").hidden = ADD_MODE !== "one";
+    $("#manyFields").hidden = ADD_MODE !== "many";
+    $("#sSubmit").textContent = ADD_MODE === "one" ? "회원 추가" : "여러 명 추가";
+  });
+  $("#sBulk").addEventListener("input", () => {
+    const n = parseBulk($("#sBulk").value).length;
+    $("#bulkCount").textContent = n ? `${n}명을 추가해요` : "";
+  });
   $("#studentForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const { error } = await sb.from("students").insert({
-      class_id: $("#sClass").value, name: $("#sName").value.trim(),
-      age: $("#sAge").value ? Number($("#sAge").value) : null, level: $("#sLevel").value,
-    });
+    const base = { class_id: $("#sClass").value, level: $("#sLevel").value };
+    if (!base.class_id) return toast("먼저 반을 만들어 주세요.");
+    let rows;
+    if (ADD_MODE === "one") {
+      const name = $("#sName").value.trim();
+      if (!name) return toast("이름을 입력해 주세요.");
+      rows = [{ ...base, name, age: $("#sAge").value ? Number($("#sAge").value) : null }];
+    } else {
+      rows = parseBulk($("#sBulk").value).map((x) => ({ ...base, ...x }));
+      if (!rows.length) return toast("회원 목록을 붙여넣어 주세요.");
+    }
+    const { error } = await sb.from("students").insert(rows);
     if (error) return toast("추가하지 못했어요: " + error.message);
-    $("#sName").value = ""; $("#sAge").value = "";
-    toast("회원을 추가했어요. 회원 현황에서 리포트 링크를 복사할 수 있어요.");
+    $("#sName").value = ""; $("#sAge").value = ""; $("#sBulk").value = ""; $("#bulkCount").textContent = "";
+    toast(rows.length > 1 ? `${rows.length}명을 추가했어요.` : "회원을 추가했어요. 회원 현황에서 리포트를 보낼 수 있어요.");
     load();
   });
+
+  // ---------- 1. 단계 바꾸기 (승급) ----------
+  document.addEventListener("change", async (e) => {
+    const sel = e.target.closest("[data-level-for]"); if (!sel) return;
+    const { error } = await sb.from("students").update({ level: sel.value }).eq("id", sel.dataset.levelFor);
+    if (error) { toast("단계를 바꾸지 못했어요: " + error.message); return load(); }
+    toast(`${sel.dataset.name} 단계를 ${sel.value}(으)로 바꿨어요.`);
+    load();
+  });
+
+  // ---------- 4. 피드백 전화 시간 (하루 평균, 주 1회) ----------
+  const CALL_OPTIONS = [0, 10, 20, 30, 45, 60, 90];
+  function weekStart(d = new Date()) {
+    const x = new Date(d); const day = (x.getDay() + 6) % 7; x.setDate(x.getDate() - day); return ymd(x);
+  }
+  let ME = null;
+  function callBlock(logs, uid) {
+    ME = uid;
+    if (logs === null) return `<div class="list" style="border-top:1px solid var(--line);padding-top:12px"><b>피드백 전화 시간</b><p class="sub">데이터베이스에 전화 시간 표가 아직 없어요. schema.sql 을 한 번 더 실행해 주세요.</p></div>`;
+    const wk = weekStart();
+    const mine = logs.find((x) => x.week_start === wk);
+    const base = logs[0];
+    const last = logs[logs.length - 1];
+    let summary = `<p class="sub">이번 주 하루 평균 몇 분 정도 썼는지 눌러 주세요. 첫 기록이 기준이 돼요.</p>`;
+    let bar = "";
+    if (base && last && logs.length > 1 && base.minutes_per_day > 0) {
+      const cut = Math.round((1 - last.minutes_per_day / base.minutes_per_day) * 100);
+      const goal = cut >= 50;
+      summary = `<p class="sub">기준 ${base.minutes_per_day}분 (${md(base.week_start)} 주) → 최근 ${last.minutes_per_day}분 · <b>${cut >= 0 ? cut + "% 줄었어요" : -cut + "% 늘었어요"}</b> <span class="chip ${goal ? "good" : "warn"}">${goal ? "목표 달성" : "목표 50%↓"}</span></p>`;
+      bar = `<div class="bar"><i style="width:${Math.max(0, Math.min(100, cut))}%"></i><span class="target" style="left:50%" title="목표 50%"></span></div>`;
+    } else if (base) {
+      summary = `<p class="sub">기준 ${base.minutes_per_day}분 (${md(base.week_start)} 주). 다음 주부터 줄어든 비율을 보여 드려요.</p>`;
+    }
+    return `<div class="list" style="border-top:1px solid var(--line);padding-top:12px" id="callBlock">
+        <div class="row between"><b>피드백 전화 시간</b><b class="num">${mine ? mine.minutes_per_day + "분" : "–"}</b></div>
+        ${bar}${summary}
+        <span class="field-label">이번 주 (${md(wk)}~) 하루 평균</span>
+        <div class="pick">${CALL_OPTIONS.map((m) => `<button type="button" data-call="${m}" class="${mine && mine.minutes_per_day === m ? "on" : ""}">${m === 90 ? "90분+" : m + "분"}</button>`).join("")}</div>
+      </div>`;
+  }
+  async function saveCall(min) {
+    const { error } = await sb.from("call_logs").upsert({ teacher_id: ME, week_start: weekStart(), minutes_per_day: min }, { onConflict: "teacher_id,week_start" });
+    if (error) return toast("저장하지 못했어요: " + error.message);
+    toast(`이번 주 피드백 전화 시간을 하루 ${min}분으로 기록했어요.`);
+    load();
+  }
 
   // ---------- 반 설정: 눌러서 고르기 ----------
   const NAMES = ["초급반", "중급반", "고급반", "성인반", "개인 레슨"];
@@ -1638,6 +1925,38 @@ const PAGES = {
 
   guardConfig();
   render();
+
+  } },
+  reset: { title: "물결 새 비밀번호", init() {
+
+  guardConfig($("#form"));
+  // 메일 링크에 담긴 정보로 잠깐 로그인된 상태가 되면 비밀번호를 바꿀 수 있어요
+  (async () => {
+    await new Promise((r) => setTimeout(r, 300));
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      $("#state").textContent = "새로 쓸 비밀번호를 입력해 주세요.";
+      $("#submit").disabled = false;
+    } else {
+      $("#state").textContent = "링크가 만료됐거나 올바르지 않아요. 로그인 화면에서 재설정 메일을 다시 요청해 주세요.";
+    }
+  })();
+
+  $("#form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if ($("#pw1").value !== $("#pw2").value) { $("#msg").textContent = "두 비밀번호가 서로 달라요."; return; }
+    $("#submit").disabled = true;
+    const { error } = await sb.auth.updateUser({ password: $("#pw1").value });
+    if (error) { $("#submit").disabled = false; $("#msg").textContent = "바꾸지 못했어요: " + error.message; return; }
+    $("#msg").textContent = "비밀번호를 바꿨어요. 대시보드로 이동할게요.";
+    setTimeout(() => (location.href = "?p=teacher"), 1200);
+  });
+
+  } },
+  terms: { title: "물결 이용약관·개인정보", init() {
+
+  addBackButton($("#backSlot"), "?p=signup", true);
+  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
 
   } },
 };
