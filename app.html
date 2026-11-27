@@ -471,6 +471,14 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
 .sheet input { font-size: 13.5px; }
 @media (max-width: 520px) { .sheet-wrap { place-items: end center; } .sheet { border-radius: 20px 20px 16px 16px; } }
 
+/* 약관 창 */
+.term-sheet { width: min(620px, 100%); }
+.term-frame { width: 100%; height: min(58vh, 520px); border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.linkish { border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; color: var(--muted); font: inherit; }
+body.embed .topbar, body.embed #termsIntro, body.embed #ok, body.embed #termsFoot, body.embed .notice { display: none !important; }
+body.embed main { padding-top: 12px; }
+body.embed::before { display: none; }
+
   </style>
 </head>
 <body>
@@ -494,9 +502,9 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
 
     <div class="list" style="gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:12px">
       <label class="check"><input type="checkbox" id="agreeAll"> <b>전체 동의</b></label>
-      <div class="check"><input type="checkbox" class="agree" id="ag1" required> <label for="ag1">(필수) 서비스 이용약관</label> <a class="sub" href="?p=terms#terms" target="_blank" rel="noopener">보기</a></div>
-      <div class="check"><input type="checkbox" class="agree" id="ag2" required> <label for="ag2">(필수) 개인정보 수집·이용</label> <a class="sub" href="?p=terms#privacy" target="_blank" rel="noopener">보기</a></div>
-      <div class="check"><input type="checkbox" class="agree" id="ag3" required> <label for="ag3">(필수) 회원(아동) 영상은 보호자 동의를 받은 경우에만 올립니다</label> <a class="sub" href="?p=terms#video" target="_blank" rel="noopener">보기</a></div>
+      <div class="check"><input type="checkbox" class="agree" id="ag1" required> <label for="ag1">(필수) 서비스 이용약관</label> <button type="button" class="linkish sub term-open" data-term="terms" data-for="ag1">보기</button></div>
+      <div class="check"><input type="checkbox" class="agree" id="ag2" required> <label for="ag2">(필수) 개인정보 수집·이용</label> <button type="button" class="linkish sub term-open" data-term="privacy" data-for="ag2">보기</button></div>
+      <div class="check"><input type="checkbox" class="agree" id="ag3" required> <label for="ag3">(필수) 회원(아동) 영상은 보호자 동의를 받은 경우에만 올립니다</label> <button type="button" class="linkish sub term-open" data-term="video" data-for="ag3">보기</button></div>
     </div>
 
     <button class="btn primary block" id="submit">가입하기</button>
@@ -670,7 +678,7 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
     <nav class="row wrap" style="gap:12px;font-size:13.5px"><a href="#terms">이용약관</a><a href="#privacy">개인정보 처리방침</a><a href="#video">아동 영상 안내</a></nav>
   </div>
 
-  <div class="panel doc">
+  <div class="panel doc" id="termsIntro">
     <span class="eyebrow">시범 운영 기간 적용 · 시행일 <span class="fill">[2027년 1월 ○일]</span></span>
     <p class="sub">물결은 2027년 1~2월 수영학원 시범 운영을 위한 서비스예요. 아래 내용은 시범 운영 기간에 적용되며, 정식 서비스 전에 다시 안내해 드려요.</p>
   </div>
@@ -741,7 +749,8 @@ textarea { resize: vertical; font: 15px/1.6 var(--sans); }
     </ul>
   </section>
 
-  <p class="sub" style="text-align:center;padding-bottom:12px">물결 · 수영 성장 기록 리포트</p>
+  <button type="button" class="btn primary block" id="ok">확인</button>
+  <p class="sub" id="termsFoot" style="text-align:center;padding-bottom:12px">물결 · 수영 성장 기록 리포트</p>
 </main>
 </template>
 
@@ -1106,6 +1115,7 @@ const here = () => location.search || "?p=teacher";
 function navStack() { try { return JSON.parse(sessionStorage.getItem(NAV_KEY)) || []; } catch { return []; } }
 function saveStack(s) { try { sessionStorage.setItem(NAV_KEY, JSON.stringify(s.slice(-30))); } catch {} }
 (function trackPage() {
+  if (window.top !== window) return; // 창(iframe) 안에서 연 화면은 기록 안 함
   const s = navStack(), cur = here();
   if (s[s.length - 1] === cur) return;
   if (s[s.length - 2] === cur) s.pop(); else s.push(cur);
@@ -1204,6 +1214,51 @@ const PAGES = {
   guardConfig($("#form"));
   const all = $("#agreeAll");
   const items = [...document.querySelectorAll(".agree")];
+
+  // ---------- 약관 창: 끝까지 읽고 [확인] → 창 닫히고 동의 체크 ----------
+  const TERM_TITLE = { terms: "서비스 이용약관", privacy: "개인정보 수집·이용", video: "아동 영상 안내" };
+  function openTerm(key, boxId) {
+    document.getElementById("termSheet")?.remove();
+    const wrap = document.createElement("div");
+    wrap.id = "termSheet"; wrap.className = "sheet-wrap";
+    wrap.innerHTML = `
+      <div class="sheet panel term-sheet" role="dialog" aria-modal="true" aria-labelledby="termTitle">
+        <div class="row between"><h2 id="termTitle">${TERM_TITLE[key]}</h2><button type="button" class="btn small" data-close>닫기</button></div>
+        <iframe class="term-frame" title="${TERM_TITLE[key]}" src="${"?p=terms&embed=1#" + key}"></iframe>
+        <p class="sub" id="termHint">끝까지 읽으면 확인을 누를 수 있어요.</p>
+        <button type="button" class="btn primary block" id="termOk" disabled>확인</button>
+      </div>`;
+    document.body.appendChild(wrap);
+    const frame = wrap.querySelector("iframe"), ok = wrap.querySelector("#termOk");
+    const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
+    const onKey = (e) => { if (e.key === "Escape") close(); };
+    document.addEventListener("keydown", onKey);
+    const unlock = () => { ok.disabled = false; wrap.querySelector("#termHint").textContent = "다 읽으셨으면 확인을 눌러 주세요."; };
+    frame.addEventListener("load", () => {
+      try {
+        const w = frame.contentWindow, el = w.document.scrollingElement || w.document.documentElement;
+        const check = () => { if (el.scrollTop + w.innerHeight >= el.scrollHeight - 12) unlock(); };
+        w.addEventListener("scroll", check, { passive: true });
+        setTimeout(check, 300);
+      } catch { unlock(); } // 읽기 확인이 안 되는 환경이면 바로 확인 가능
+    });
+    setTimeout(() => { if (ok.disabled && !frame.contentWindow) unlock(); }, 4000);
+    wrap.addEventListener("click", (e) => {
+      if (e.target === wrap || e.target.closest("[data-close]")) return close();
+      if (e.target.id === "termOk" && !ok.disabled) {
+        const box = document.getElementById(boxId);
+        box.checked = true;
+        all.checked = items.every((i) => i.checked);
+        close();
+        toast(`${TERM_TITLE[key]}에 동의했어요.`);
+      }
+    });
+  }
+  document.querySelectorAll(".term-open").forEach((b) => b.addEventListener("click", () => openTerm(b.dataset.term, b.dataset.for)));
+  // 동의 체크를 직접 누르면 먼저 내용을 보여 줌
+  items.forEach((c) => c.addEventListener("click", (e) => {
+    if (c.checked) { e.preventDefault(); const b = document.querySelector(`.term-open[data-for="${c.id}"]`); openTerm(b.dataset.term, c.id); }
+  }));
   all.addEventListener("change", () => items.forEach((c) => (c.checked = all.checked)));
   items.forEach((c) => c.addEventListener("change", () => (all.checked = items.every((i) => i.checked))));
 
@@ -1940,8 +1995,17 @@ const PAGES = {
   } },
   terms: { title: "물결 이용약관·개인정보", init() {
 
-  addBackButton($("#backSlot"), "?p=signup", true);
-  if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  const EMBED = new URLSearchParams(location.search).get("embed") === "1";
+  if (EMBED) {
+    // 회원가입 화면의 약관 창 안: 요청한 내용만 보여 줌 (확인 버튼은 바깥 창에 있음)
+    document.body.classList.add("embed");
+    const key = (location.hash || "#terms").slice(1);
+    document.querySelectorAll("section.doc").forEach((sec) => (sec.hidden = sec.id !== key));
+  } else {
+    addBackButton($("#backSlot"), "?p=signup", true);
+    if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
+  }
+  $("#ok").addEventListener("click", () => goBack("?p=signup"));
 
   } },
 };
